@@ -1,0 +1,496 @@
+/* ================================ */
+/* === STYLING DASAR & TEMA === */
+/* ================================ */
+
+/* Variabel CSS untuk tema (Dark Mode Default) */
+:root {
+    --bg: #0b1324;               /* Warna background utama */
+    --panel: #111a33;            /* Warna panel/kartu */
+    --ink: #e8eefc;              /* Warna teks utama */
+    --muted: #9fb2d7;           /* Warna teks sekunder/redup */
+    --accent: #46b07b;           /* Warna aksen utama (misal: toggle aktif) */
+    --accent-rgb: 70, 176, 123;  /* Versi RGB dari aksen utama (untuk box-shadow) */
+    --accent-2: #5aa4ff;         /* Warna aksen sekunder (misal: tombol primer, focus) */
+    --accent-2-rgb: 90, 164, 255;/* Versi RGB dari aksen sekunder */
+    --warn: #ffb057;             /* Warna background peringatan/error */
+    --warn-text: #000;           /* Warna teks peringatan/error */
+    --grid: #1c2849;             /* Warna border/garis pemisah */
+    --on: #1f7a55;               /* Warna sel K-Map 'ON' (gradien bawah) */
+    --on-2: #2b966a;             /* Warna sel K-Map 'ON' (gradien atas) */
+    --off: #243255;              /* Warna sel K-Map 'OFF' */
+    --dontcare: #6b4220;         /* Warna sel K-Map 'Don't Care' */
+    --dontcare-border: #9c5b25;  /* Warna border sel K-Map 'Don't Care' */
+    --badge: #263665;            /* Warna background tombol sekunder/badge */
+    --code: #0f1a35;             /* Warna background input/kode */
+}
+
+/* Variabel CSS untuk TEMA TERANG (LIGHT MODE) */
+body.light-mode {
+    --bg: #f4f7fa;
+    --panel: #ffffff;
+    --ink: #1a253c;
+    --muted: #5a6b87;
+    --accent: #28a745;
+    --accent-rgb: 40, 167, 69;
+    --accent-2: #007bff;
+    --accent-2-rgb: 0, 123, 255;
+    --warn: #ffc107;
+    --warn-text: #333;
+    --grid: #dde4ee;
+    --on: #28a745;
+    --on-2: #2dbc4e;
+    --off: #e9ecef;
+    --dontcare: #fff3cd;
+    --dontcare-border: #ffeeba;
+    --badge: #e2e8f0;
+    --code: #f0f4f9;
+    background: var(--bg); /* Set background solid untuk light mode */
+}
+
+/* Reset dasar & box-sizing */
+* {
+    box-sizing: border-box;
+}
+
+/* Styling dasar body */
+body {
+    margin: 0;
+    font: 14px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    transition: background .3s ease, color .3s ease; /* Transisi untuk ganti tema */
+    /* Body tidak perlu scroll, scroll utama akan di handle browser */
+}
+
+/* Styling Header */
+header {
+    grid-area: header; /* Menempatkan header di area grid 'header' */
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--grid);
+    background-color: var(--panel); /* Background solid */
+    display: flex;
+    justify-content: space-between; /* Judul kiri, toggle kanan */
+    align-items: center;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 18px;
+    letter-spacing: .3px;
+}
+
+/* ================================ */
+/* === LAYOUT DASHBOARD (CSS GRID) === */
+/* ================================ */
+.dashboard-layout {
+    display: grid;
+    /* Kolom: sidebar 320px, konten utama sisa lebar */
+    grid-template-columns: 320px 1fr;
+     /* Baris: header setinggi konten, sisanya (konten) setinggi konten */
+    grid-template-rows: auto auto;
+    /* Menentukan area untuk setiap bagian */
+    grid-template-areas:
+        "header header"  /* Header mengisi kedua kolom di baris 1 */
+        "sidebar main"; /* Sidebar di kolom 1, main di kolom 2, baris 2 */
+    min-height: 100vh; /* Pastikan layout minimal setinggi layar */
+}
+
+/* Styling Sidebar */
+.sidebar {
+    grid-area: sidebar; /* Menempatkan sidebar di area grid 'sidebar' */
+    display: flex;
+    flex-direction: column; /* Konten di sidebar disusun vertikal */
+    gap: 16px; /* Jarak antar kartu di sidebar */
+    padding: 16px;
+    border-right: 1px solid var(--grid); /* Garis pemisah kanan */
+    /* Scrollbar di body, tidak perlu di sini */
+}
+
+/* Styling Area Konten Utama */
+.main-content {
+    grid-area: main; /* Menempatkan konten utama di area grid 'main' */
+    display: flex;
+    flex-direction: column; /* Konten di area utama disusun vertikal */
+    gap: 16px; /* Jarak antar bagian (stats, results) */
+    padding: 16px;
+     /* Scrollbar di body, tidak perlu di sini */
+}
+
+/* Grid untuk panel statistik */
+.stats-grid {
+    display: grid;
+    /* 3 kolom sama lebar */
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px; /* Jarak antar panel stat */
+}
+
+/* Grid untuk hasil (Tabel & K-Map) */
+.results-grid {
+    display: grid;
+    /* Kolom 1 lebih lebar sedikit (1.1) dari kolom 2 (1) */
+    grid-template-columns: 1.1fr 1fr;
+    gap: 16px; /* Jarak antar kartu hasil */
+    /* Kartu tidak dipaksa sama tinggi, mulai dari atas */
+    align-items: start;
+}
+
+/* ================================ */
+/* === GAYA KOMPONEN & EFEK === */
+/* ================================ */
+
+/* Styling umum untuk Kartu/Panel */
+.card {
+    background: var(--panel);
+    border: 1px solid var(--grid);
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .05);
+    transition: all 0.2s ease-out; /* Transisi halus untuk hover */
+}
+
+/* Efek hover pada kartu: sedikit naik & bayangan lebih jelas */
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, .1);
+    border-color: var(--accent-2);
+}
+body.light-mode .card:hover {
+    box-shadow: 0 10px 20px rgba(0, 0, 0, .07);
+}
+
+/* Judul di dalam kartu */
+.card h2 {
+    margin: 0 0 12px;
+    font-size: 16px;
+    border-bottom: 1px solid var(--grid);
+    padding-bottom: 8px;
+}
+
+/* Styling khusus untuk kartu statistik */
+.card-stat {
+    padding: 14px 18px;
+}
+.card-stat label { /* Label di kartu stat (misal: "Konteks Variabel") */
+    font-size: 13px;
+    color: var(--muted);
+}
+.card-stat .stat-value { /* Nilai di kartu stat (misal: "A, B, C") */
+    font-size: 18px;
+    font-weight: 600;
+    display: block; /* Agar menempati baris baru */
+    margin-top: 4px;
+    /* Reset style pill lama */
+    background: none;
+    padding: 0;
+    border-radius: 0;
+    color: var(--ink);
+}
+
+/* Styling untuk grup field (label + input/select) */
+.field {
+    display: grid; /* Label dan input disusun vertikal */
+    gap: 8px; /* Jarak antara label dan input */
+    margin: 10px 0 14px; /* Jarak atas/bawah field */
+}
+
+/* Styling Label */
+label {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* Styling Input teks, textarea, dan select */
+input[type=text],
+textarea,
+select {
+    width: 100%; /* Lebar penuh */
+    padding: 10px 12px;
+    background: var(--code);
+    color: var(--ink);
+    border: 1px solid var(--grid);
+    border-radius: 10px;
+    outline: none; /* Hapus outline default browser */
+    transition: border-color .2s ease, box-shadow .2s ease; /* Transisi untuk focus */
+}
+
+/* Efek focus (saat diklik/dipilih) */
+input[type=text]:focus,
+textarea:focus,
+select:focus {
+    border-color: var(--accent-2); /* Ganti warna border */
+    box-shadow: 0 0 0 3px rgba(var(--accent-2-rgb), 0.25); /* Efek glow */
+}
+
+/* Styling grup tombol */
+.actions {
+    display: flex;
+    flex-wrap: wrap; /* Tombol akan pindah baris jika tidak cukup lebar */
+    gap: 8px; /* Jarak antar tombol */
+}
+
+/* Styling Tombol Umum */
+button {
+    background: linear-gradient(180deg, #1f3d7a, #1a3366); /* Gradien dark mode */
+    border: 1px solid #2a4aa5;
+    color: white;
+    border-radius: 10px;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease-out; /* Transisi hover */
+    /* Optimasi performa transisi */
+    will-change: transform, background, box-shadow;
+}
+
+/* Efek Hover Tombol (kecuali saat disabled) */
+button:not(:disabled):hover {
+    transform: translateY(-2px); /* Sedikit naik */
+    filter: brightness(1.1); /* Sedikit lebih terang */
+    box-shadow: 0 4px 15px -2px rgba(var(--accent-2-rgb), 0.3); /* Efek glow */
+}
+
+/* Override tombol untuk light mode */
+body.light-mode button {
+    background: var(--accent-2);
+    border-color: #0069d9;
+}
+body.light-mode button:not(:disabled):hover {
+    box-shadow: 0 4px 15px -2px rgba(var(--accent-2-rgb), 0.4);
+}
+
+/* Styling Tombol Sekunder */
+button.secondary {
+    background: var(--badge);
+    border-color: var(--grid);
+    color: var(--ink);
+}
+button.secondary:not(:disabled):hover {
+    /* Efek glow berbeda untuk tombol sekunder */
+    box-shadow: 0 4px 15px -2px rgba(150, 160, 180, 0.1);
+}
+
+/* Styling Tombol Mini (F1-F5) */
+button.mini-btn {
+    padding: 4px 10px;
+    font-size: 12px;
+}
+
+/* Styling Tombol Disabled */
+button:disabled {
+    opacity: 0.6;
+    cursor: default; /* Cursor standar, bukan pointer */
+}
+
+/* Styling Tabel */
+table {
+    width: 100%;
+    border-collapse: collapse; /* Hapus jarak antar border sel */
+}
+th, td { /* Sel header dan data */
+    text-align: center;
+    padding: 8px;
+    border-bottom: 1px solid var(--grid);
+}
+/* Header tabel tidak perlu sticky */
+
+/* Wrapper Tabel Kebenaran */
+.tt {
+    overflow-x: auto; /* Scroll horizontal jika tabel lebar */
+    border: 1px solid var(--grid);
+    border-radius: 10px;
+    /* Tidak ada max-height & overflow-y */
+}
+
+/* ================================ */
+/* === K-MAP BARU (GRID & LABELS) === */
+/* ================================ */
+/* Container utama K-Map (pojok, label atas, label kiri, peta) */
+.kmap-container {
+    display: grid;
+    grid-template-areas:
+        "corner top"
+        "left   map";
+    grid-template-columns: auto 1fr; /* Kolom label kiri auto, peta sisa lebar */
+    grid-template-rows: auto 1fr;    /* Baris label atas auto, peta sisa tinggi */
+    gap: 6px; /* Jarak antar area */
+    margin-top: 6px;
+}
+
+/* Pojok kiri atas K-Map (label variabel) */
+.kmap-corner {
+    grid-area: corner;
+    display: grid;
+    place-items: center; /* Teks di tengah */
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    padding: 4px 8px;
+    min-width: 40px; /* Lebar minimum */
+}
+
+/* Area untuk label atas (kolom) */
+.kmap-label-top {
+    grid-area: top;
+    display: grid; /* Label disusun pakai grid */
+    gap: 6px;
+}
+
+/* Area untuk label kiri (baris) */
+.kmap-label-left {
+    grid-area: left;
+    display: grid; /* Label disusun pakai grid */
+    gap: 6px;
+}
+
+/* Styling untuk label Gray code (00, 01, 11, 10) */
+.kmap-axis-label {
+    display: grid;
+    place-items: center; /* Teks di tengah */
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    background: var(--code);
+    border-radius: 6px;
+    border: 1px solid var(--grid);
+    padding: 4px;
+}
+
+/* Wrapper untuk sel K-Map (bagian yang bisa scroll horizontal) */
+.kmap-wrapper {
+    grid-area: map;
+    overflow-x: auto; /* Hanya scroll horizontal jika perlu */
+    -webkit-overflow-scrolling: touch; /* Scroll halus di iOS */
+    border: 1px solid var(--grid);
+    border-radius: 10px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.01), rgba(255, 255, 255, 0.00));
+     /* Tidak ada max-height & overflow-y */
+}
+
+/* Grid internal untuk sel K-Map */
+.kmap {
+    display: grid;
+    gap: 6px;
+    align-content: start; /* Sel mulai dari atas */
+    padding: 8px;
+    position: relative;
+    grid-auto-flow: row; /* Sel mengisi baris demi baris */
+    min-width: fit-content; /* Lebar grid sesuai isi (penting untuk scroll-x) */
+}
+
+/* Styling Sel K-Map */
+.kcell {
+    width: 56px;
+    height: 44px;
+    display: grid;
+    place-items: center; /* Angka di tengah */
+    border-radius: 10px;
+    border: 1px solid var(--grid);
+    background: var(--off); /* Warna default (0) */
+    color: var(--ink);
+    cursor: pointer;
+    user-select: none; /* Teks tidak bisa dipilih */
+    position: relative;
+    transition: transform .1s ease, background .2s ease, border-color .2s ease;
+}
+.kcell.on { /* Styling saat ON (1) */
+    background: linear-gradient(180deg, var(--on-2), var(--on));
+    border-color: #2fb07c;
+    color: white;
+}
+.kcell.dont-care { /* Styling saat Don't Care (d) */
+    background: var(--dontcare);
+    border-color: var(--dontcare-border);
+    color: var(--muted);
+    font-style: italic;
+}
+.kcell:hover { /* Efek hover sel */
+    transform: translateY(-1px) scale(1.02);
+    border-color: var(--accent);
+}
+
+/* Styling blok kode (misal: output SOP) */
+code, .code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code);
+    border: 1px solid var(--grid);
+    color: var(--ink);
+    padding: 8px 10px;
+    border-radius: 10px;
+    display: block; /* Mengisi lebar kontainer */
+    line-height: 1.4;
+    min-height: 38px; /* Samakan tinggi minimal dengan input */
+}
+
+/* Styling kode inline (untuk daftar operator) */
+.code-inline {
+    display: inline-block;
+    padding: 2px 6px;
+    min-height: 0;
+    border-radius: 6px;
+    font-size: 13px;
+    line-height: 1.2;
+    font-weight: 500;
+}
+
+/* Teks kecil/redup */
+.mini {
+    font-size: 12px;
+    color: var(--muted);
+}
+
+/* Garis pemisah horizontal */
+.sep {
+    height: 1px;
+    background: var(--grid);
+    margin: 16px 0;
+}
+
+/* Styling kotak pesan error */
+.error-msg {
+    background: var(--warn);
+    color: var(--warn-text);
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin-top: 12px;
+    font-weight: 500;
+    border: 1px solid var(--dontcare-border);
+}
+
+/* Toggle Tema */
+.theme-toggle { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.toggle-switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--badge); transition: .4s; border-radius: 22px; }
+.slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+input:checked+.slider { background-color: var(--accent); }
+input:checked+.slider:before { transform: translateX(18px); }
+
+/* ================================ */
+/* === RESPONSIVE === */
+/* ================================ */
+@media (max-width: 980px) {
+    /* Layout menjadi 1 kolom di layar kecil */
+    .dashboard-layout {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "header"
+            "sidebar"
+            "main";
+        height: auto; /* Tinggi otomatis sesuai konten */
+        min-height: 100vh;
+    }
+    .sidebar {
+        border-right: none; /* Hapus border pemisah */
+    }
+    /* Panel statistik jadi 1 kolom */
+    .stats-grid {
+         grid-template-columns: 1fr;
+    }
+    /* Hasil (Tabel & K-Map) jadi 1 kolom */
+    .results-grid {
+        grid-template-columns: 1fr;
+        align-items: start;
+    }
+     /* Tidak perlu lagi override max-height karena scroll sudah gabung */
+}
