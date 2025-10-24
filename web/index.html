@@ -14,8 +14,8 @@
             <h1>Dashboard Aljabar Boolean <small>— v2.4</small></h1>
         </div>
         <div class="theme-toggle">
-            <span class="muted">Mode Terang</span>
-            <label class="toggle-switch">
+            <span class="muted" id="theme-toggle-label">Mode</span>
+            <label class="toggle-switch" title="Ganti mode gelap/terang">
                 <input id="theme-toggle-cb" type="checkbox">
                 <span class="slider"></span>
             </label>
@@ -27,25 +27,29 @@
         <aside class="sidebar">
             <div class="card">
                 <h2>1) Input & Kontrol</h2>
-                
-                <div class="field">
+                <div class="field card h2 + .field">
                     <label for="expr">Ekspresi Boolean</label>
-                    <input id="expr" type="text" placeholder="Misal: A'B + AC" value="A'B + AC" />
+                    <input id="expr" type="text" placeholder="Misal: A'B + AC" value="A'B + AC"
+                           title="Ketik ekspresi. cth: A'B + C(A+B)" />
                 </div>
                 <div class="actions">
-                    <button id="btn-eval">Evaluasi</button>
-                    <button id="btn-clear" class="secondary">Bersihkan</button>
+                    <button id="btn-eval" title="Evaluasi ekspresi, gambar Tabel Kebenaran, & update K-Map">Evaluasi</button>
+                    <button id="btn-clear" class="secondary" title="Hapus ekspresi & reset K-Map ke 3-variabel">Bersihkan</button>
                 </div>
                 <div id="error-box" class="error-msg" style="display:none;"></div>
                 <div class="sep"></div>
                 <div class="field">
-                    <label>Contoh Uji (F1-F5)</label>
-                    <div class="actions">
+                    <label>Contoh Uji (F1-F10)</label> <div class="actions">
                         <button id="btn-ex1" class="secondary mini-btn" title="A'B + AC">F1</button>
                         <button id="btn-ex2" class="secondary mini-btn" title="A(B+C)">F2</button>
                         <button id="btn-ex3" class="secondary mini-btn" title="(A^B)C + A'B'">F3</button>
                         <button id="btn-ex4" class="secondary mini-btn" title="(A+B)(C+D)">F4</button>
-                        <button id="btn-ex5" class="secondary mini-btn" title="A'B' + AB">F5</button>
+                        <button id="btn-ex5" class="secondary mini-btn" title="A'B'+AB">F5</button>
+                        <button id="btn-ex6" class="secondary mini-btn" title="A^B^C">F6</button>
+                        <button id="btn-ex7" class="secondary mini-btn" title="(A+B'C')(A'+C)">F7</button>
+                        <button id="btn-ex8" class="secondary mini-btn" title="(AB)'+C">F8</button>
+                        <button id="btn-ex9" class="secondary mini-btn" title="AB+AC+BC">F9</button>
+                        <button id="btn-ex10" class="secondary mini-btn" title="(A+B+C)(A'+B)(B+C')">F10</button>
                     </div>
                 </div>
             </div>
@@ -53,7 +57,7 @@
                 <h2>Petunjuk Singkat</h2>
                 <ul style="padding-left: 20px; margin: 0; font-size: 13px;">
                     <li style="margin-bottom: 5px;">Masukkan ekspresi, klik <b>Evaluasi</b>.</li>
-                    <li style="margin-bottom: 5px;">Klik sel K-Map (0 → 1 → d), lalu tekan <b>Sederhanakan</b>.</li>
+                    <li style="margin-bottom: 5px;">Klik sel K-Map (0 → 1 → d), lalu tekan <b>Sederhanakan SOP/POS</b>.</li>
                 </ul>
                 <div class="sep"></div>
                 <label>Daftar Operator</label>
@@ -77,10 +81,12 @@
                     <span class="stat-value" id="minterms-pill">—</span>
                 </div>
                 <div class="card card-stat">
-                    <label>Sederhana (SOP)</label>
+                    <label>Sederhana / Waktu QM</label>
                     <span class="stat-value" id="simp-pill">—</span>
+                    <span class="stat-benchmark" id="benchmark-pill">—</span>
                 </div>
             </div>
+
             <div class="results-grid">
                 <div class="card">
                     <h2>Tabel Kebenaran</h2>
@@ -94,7 +100,8 @@
                         </table>
                     </div>
                 </div>
-                <div class="card">
+
+                <div class="card" id="kmap-print-card">
                     <h2>Karnaugh Map (klik sel: 0 → 1 → d)</h2>
                     <div class="kmap-container">
                         <div class="kmap-corner" id="kmap-corner"></div>
@@ -105,19 +112,21 @@
                         </div>
                     </div>
                     <div class="actions" style="margin-top:10px">
-                        <button id="btn-simplify-sop">Sederhanakan SOP</button>
-                        <button id="btn-simplify-pos" class="secondary">Sederhanakan POS</button>
-                        <button id="btn-reset" class="secondary">Reset K-Map</button>
+                        <button id="btn-simplify-sop" title="Sederhanakan K-Map berdasarkan sel '1' (SOP)">Sederhanakan SOP</button>
+                        <button id="btn-simplify-pos" class="secondary" title="Sederhanakan K-Map berdasarkan sel '0' (POS)">Sederhanakan POS</button>
+                        <button id="btn-reset" class="secondary" title="Kembalikan semua sel K-Map ke '0'">Reset K-Map</button>
+                        <button id="btn-print-kmap" class="secondary" title="Buka dialog cetak K-Map (bisa Simpan ke PDF)">Cetak/PDF</button>
                     </div>
                     <div class="field" style="margin-top:10px">
-                        <label>Ekspresi Tersederhana</label> <div id="out-simplified" class="code">—</div>
+                        <label>Ekspresi Tersederhana</label>
+                        <div id="out-simplified" class="code">—</div>
                     </div>
                     <div class="field">
                         <label>Minterm (index, pisahkan dengan koma) &nbsp;<span class="mini">(impor/ekspor)</span></label>
                         <input id="minterm-io" type="text" placeholder="contoh: 0,1,2,5,7" />
                         <div class="actions">
-                            <button id="btn-import" class="secondary">Impor Minterm → K-Map</button>
-                            <button id="btn-export" class="secondary">Ekspor (m+d) → Minterm</button>
+                            <button id="btn-import" class="secondary" title="Impor angka dari kotak di atas ke K-Map & Tabel Kebenaran">Impor Minterm → K-Map</button>
+                            <button id="btn-export" class="secondary" title="Ekspor sel '1' dan 'd' dari K-Map ke kotak di atas">Ekspor (m+d) → Minterm</button>
                         </div>
                     </div>
                 </div>

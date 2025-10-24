@@ -36,15 +36,21 @@ body.light-mode {
     --accent-2-rgb: 0, 123, 255;
     --warn: #ffc107;
     --warn-text: #333;
-    --grid: #dde4ee;
+    
+    /* PERBAIKAN: Garis pemisah dibuat lebih gelap lagi agar tegas */
+    --grid: #adb5bd; 
+    
     --on: #28a745;
     --on-2: #2dbc4e;
     --off: #e9ecef;
     --dontcare: #fff3cd;
-    --dontcare-border: #ffeeba;
+    
+    /* PERBAIKAN: Border 'dont-care' dibuat lebih gelap */
+    --dontcare-border: #ffc107; 
+    
     --badge: #e2e8f0;
     --code: #f0f4f9;
-    background: var(--bg); /* Set background solid untuk light mode */
+    background: var(--bg);
 }
 
 /* Reset dasar & box-sizing */
@@ -119,7 +125,7 @@ header h1 {
 /* Grid untuk panel statistik */
 .stats-grid {
     display: grid;
-    /* 3 kolom sama lebar */
+    /* DIKEMBALIKAN ke 3 kolom sama lebar */
     grid-template-columns: repeat(3, 1fr);
     gap: 16px; /* Jarak antar panel stat */
 }
@@ -186,6 +192,16 @@ body.light-mode .card:hover {
     color: var(--ink);
 }
 
+/* GAYA BARU UNTUK WAKTU BENCHMARK DI DALAM KARTU STAT */
+.card-stat .stat-benchmark {
+    display: block;
+    font-size: 13px;
+    color: var(--muted);
+    font-weight: 500;
+    margin-top: 2px; /* Jarak kecil dari hasil SOP */
+}
+
+
 /* Styling untuk grup field (label + input/select) */
 .field {
     display: grid; /* Label dan input disusun vertikal */
@@ -193,10 +209,11 @@ body.light-mode .card:hover {
     margin: 10px 0 14px; /* Jarak atas/bawah field */
 }
 
-/* Tambahkan di mana saja, misalnya di bagian .field */
+/* Perbaikan untuk margin-top field pertama setelah dropdown dihapus */
 .card h2 + .field {
     margin-top: 10px;
 }
+
 
 /* Styling Label */
 label {
@@ -234,6 +251,22 @@ select:focus {
     gap: 8px; /* Jarak antar tombol */
 }
 
+/* Styling grup tombol */
+.actions {
+    display: flex;
+    flex-wrap: wrap; 
+    gap: 8px; 
+}
+
+/* BARU: Aturan khusus untuk tombol Contoh Uji (F1-F10) */
+.sidebar .field:has(#btn-ex1) .actions {
+    /* Gunakan grid untuk kontrol layout yang lebih presisi */
+    display: grid; 
+    /* Buat 5 kolom sama lebar */
+    grid-template-columns: repeat(5, 1fr); 
+    gap: 6px; /* Sedikit kurangi jarak antar tombol */
+}
+
 /* Styling Tombol Umum */
 button {
     background: linear-gradient(180deg, #1f3d7a, #1a3366); /* Gradien dark mode */
@@ -259,6 +292,9 @@ button:not(:disabled):hover {
 body.light-mode button {
     background: var(--accent-2);
     border-color: #0069d9;
+    
+    /* PERBAIKAN: Paksa teks tombol utama jadi putih agar terbaca */
+    color: white; 
 }
 body.light-mode button:not(:disabled):hover {
     box-shadow: 0 4px 15px -2px rgba(var(--accent-2-rgb), 0.4);
@@ -498,4 +534,92 @@ input:checked+.slider:before { transform: translateX(18px); }
         align-items: start;
     }
      /* Tidak perlu lagi override max-height karena scroll sudah gabung */
+}
+
+/* ================================ */
+/* === STYLING KHUSUS CETAK === */
+/* ================================ */
+@media print {
+    /* Sembunyikan semua elemen secara default saat mencetak */
+    body * {
+        visibility: hidden;
+        margin: 0;
+        padding: 0;
+        box-shadow: none !important;
+        border: none !important;
+    }
+    
+    /* Paksa tema terang agar bisa dibaca di kertas putih */
+    body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        /* Hapus variabel CSS agar tidak menimpa warna terang */
+        --bg: #ffffff;
+        --panel: #ffffff;
+        --ink: #000000;
+        --muted: #555555;
+        --grid: #bbbbbb;
+        --on: #cccccc;
+        --on-2: #dddddd;
+        --off: #f4f4f4;
+        --dontcare: #e0e0e0;
+        --dontcare-border: #aaaaaa;
+        --badge: #eeeeee;
+        --code: #f0f0f0;
+    }
+
+    /* Sembunyikan semuanya */
+    body > * {
+        display: none !important;
+    }
+    
+    /* Tampilkan hanya kartu K-Map dan isinya */
+    #kmap-print-card, #kmap-print-card * {
+        display: block !important;
+        visibility: visible !important;
+    }
+    
+    /* Pastikan K-Map tidak terpotong */
+    #kmap-print-card {
+        page-break-inside: avoid;
+        width: 100% !important;
+        box-shadow: none !important;
+        border: 1px solid #999 !important;
+    }
+    
+    /* Pastikan grid K-Map tetap terlihat */
+    .kmap-container, .kmap {
+        display: grid !important;
+    }
+    
+    .kmap-axis-label, .kcell {
+        border: 1px solid var(--grid) !important;
+        display: grid !important;
+    }
+}
+
+/* 1. Modifikasi .kcell untuk memberi ruang
+   dan mempertegas nilai utama (0, 1, d) */
+   .kcell {
+    /* Jadikan nilai utama lebih besar dan tebal */
+    font-size: 18px;
+    font-weight: 600;
+    
+    /* Pindahkan nilai utama sedikit ke atas untuk memberi ruang
+       bagi nomor minterm di bawah */
+    padding-bottom: 10px; 
+}
+
+/* 2. Tambahkan nomor minterm di bagian bawah sel */
+.kcell::after {
+    content: attr(data-index); /* Ambil nomor dari atribut 'data-index' */
+    position: absolute;
+    bottom: 4px; /* Posisikan di bawah */
+    left: 50%; /* Posisikan di tengah horizontal */
+    transform: translateX(-50%); /* Sempurnakan posisi tengah */
+    
+    color: var(--muted); /* Warna redup */
+    font-size: 11px; /* Ukuran font kecil */
+    font-weight: 400; /* Kembali ke font normal */
+    opacity: 0.7; /* Sedikit transparan agar tidak mengganggu */
 }
