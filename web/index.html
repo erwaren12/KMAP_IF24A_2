@@ -27,14 +27,7 @@
         <aside class="sidebar">
             <div class="card">
                 <h2>1) Input & Kontrol</h2>
-                <div class="field">
-                    <label for="kmap-vars">Ukuran K-Map (Konteks Variabel)</label>
-                    <select id="kmap-vars">
-                        <option value="2">2 Variabel (A, B)</option>
-                        <option value="3">3 Variabel (A, B, C)</option>
-                        <option value="4">4 Variabel (A, B, C, D)</option>
-                    </select>
-                </div>
+                
                 <div class="field">
                     <label for="expr">Ekspresi Boolean</label>
                     <input id="expr" type="text" placeholder="Misal: A'B + AC" value="A'B + AC" />
@@ -59,7 +52,6 @@
             <div class="card">
                 <h2>Petunjuk Singkat</h2>
                 <ul style="padding-left: 20px; margin: 0; font-size: 13px;">
-                    <li style="margin-bottom: 5px;">Pilih <b>Ukuran K-Map</b> (2, 3, atau 4 variabel).</li>
                     <li style="margin-bottom: 5px;">Masukkan ekspresi, klik <b>Evaluasi</b>.</li>
                     <li style="margin-bottom: 5px;">Klik sel K-Map (0 → 1 → d), lalu tekan <b>Sederhanakan</b>.</li>
                 </ul>
@@ -113,12 +105,12 @@
                         </div>
                     </div>
                     <div class="actions" style="margin-top:10px">
-                        <button id="btn-simplify">Sederhanakan (SOP)</button>
+                        <button id="btn-simplify-sop">Sederhanakan SOP</button>
+                        <button id="btn-simplify-pos" class="secondary">Sederhanakan POS</button>
                         <button id="btn-reset" class="secondary">Reset K-Map</button>
                     </div>
                     <div class="field" style="margin-top:10px">
-                        <label>Ekspresi Tersederhana (SOP)</label>
-                        <div id="out-simplified" class="code">—</div>
+                        <label>Ekspresi Tersederhana</label> <div id="out-simplified" class="code">—</div>
                     </div>
                     <div class="field">
                         <label>Minterm (index, pisahkan dengan koma) &nbsp;<span class="mini">(impor/ekspor)</span></label>

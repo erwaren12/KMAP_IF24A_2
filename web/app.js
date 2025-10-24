@@ -13,7 +13,7 @@ const GRAY_STRINGS = {
 const CONTEXT_VARS = {
     2: ['A', 'B'],
     3: ['A', 'B', 'C'],
-    4: ['A', 'B', 'C', 'D']
+    4: ['A', 'B', 'C', 'D'] // PERBAIKAN BUG: Titik dihapus
 };
 
 // Utility: Get element by ID
@@ -303,15 +303,28 @@ function kmapLayoutForVars(nVars) { // tidak berubah
 }
 
 // Fungsi membuat data Tabel Kebenaran
-function buildTruthTable(vars, rpn) { // tidak berubah
+// MODIFIKASI: Bisa build dari RPN (ekspresi) atau dari mintermSet (impor)
+function buildTruthTable(vars, rpn, mintermSet = null) {
     const rows = []; const n = vars.length; const total = 1 << n; // 2^n baris
+
+    // Tentukan mode: RPN atau MintermSet
+    const useMintermSet = (mintermSet instanceof Set);
+
     // Loop untuk setiap minterm (0 sampai 2^n - 1)
     for (let m = 0; m < total; m++) {
         const env = {}; // Environment (nilai variabel A, B, C, ...)
         // Set nilai variabel A, B, C... berdasarkan bit dari minterm 'm'
         for (let i = 0; i < n; i++) env[vars[i]] = (m >> (n - 1 - i)) & 1;
-        // Evaluasi ekspresi RPN dengan environment saat ini
-        const y = rpn ? evalRPN(rpn, env) : 0; // Hasil Y (0 atau 1)
+        
+        let y; // Variabel untuk hasil
+        if (useMintermSet) {
+            // Tentukan Y berdasarkan apakah 'm' ada di mintermSet
+            y = mintermSet.has(m) ? 1 : 0;
+        } else {
+            // Tentukan Y dengan evaluasi RPN (logika lama)
+            y = rpn ? evalRPN(rpn, env) : 0; 
+        }
+        
         rows.push({ m, env, y }); // Simpan data baris
     }
     return rows;
@@ -324,7 +337,7 @@ function buildTruthTable(vars, rpn) { // tidak berubah
 // Cache referensi ke elemen DOM penting
 const els = {
     expr: byId('expr'),
-    kmapVarSelect: byId('kmap-vars'),     // Dropdown Pilih Ukuran
+    // kmapVarSelect: byId('kmap-vars'),     // <-- DIHAPUS
     btnEval: byId('btn-eval'),           // Tombol Evaluasi
     btnClear: byId('btn-clear'),         // Tombol Bersihkan
     varsPill: byId('vars-pill'),     // Panel stat: Variabel
@@ -337,7 +350,8 @@ const els = {
     kmapLabelTop: byId('kmap-label-top'),    // Label atas K-Map
     kmapLabelLeft: byId('kmap-label-left'),   // Label kiri K-Map
     kmap: byId('kmap'),                      // Grid sel K-Map
-    btnSimplify: byId('btn-simplify'),       // Tombol Sederhanakan
+    btnSimplifySOP: byId('btn-simplify-sop'),   // Tombol Sederhanakan SOP
+    btnSimplifyPOS: byId('btn-simplify-pos'),   // Tombol Sederhanakan POS
     btnReset: byId('btn-reset'),         // Tombol Reset K-Map
     outSimplified: byId('out-simplified'),   // Output SOP
     mintermIO: byId('minterm-io'),         // Input/Output minterm
@@ -486,66 +500,145 @@ function collectDontCaresFromKMap() {
     return res.sort((a, b) => a - b); // Urutkan
 }
 
+// Fungsi untuk mengumpulkan maxterm (nilai 0) dari state K-Map saat ini
+function collectMaxtermsFromKMap() {
+    const res = [];
+    for (let i = 0; i < currentKMap.total; i++)
+        if (currentKMap.cells[i] === 0) res.push(i); // Kumpulkan sel yang bernilai 0
+    return res.sort((a, b) => a - b); // Urutkan
+}
+
+// Fungsi BARU untuk konversi implicant F' (dari 0s) ke string POS
+function implicantsToPOS(impls, vars) {
+    // Jika tidak ada maxterm (semua 1 atau 'd'), F = 1
+    if (!impls.length) return '1'; 
+    // Jika maxterm menutupi segalanya (semua 0), F = 0
+    if (impls.some(mask => mask.split('').every(c => c === '-'))) return '0';
+    
+    const parts = impls.map(mask => {
+        const literals = [];
+        for (let i = 0; i < mask.length; i++) {
+            if (mask[i] === '-') continue;
+            const v = vars[i];
+            
+            // Terapkan De Morgan pada setiap literal
+            // (SOP F'): '1' -> V, '0' -> V'
+            // (POS F):  '1' -> V', '0' -> V
+            literals.push( (mask[i] === '1') ? (v + "'") : v );
+        }
+        if (literals.length === 0) return null;
+        // Jika hanya 1 literal (misal A), tidak perlu kurung
+        if (literals.length === 1) return literals[0];
+        // Jika > 1 literal, gabung dengan '+' dan beri kurung
+        return `(${literals.join(' + ')})`; 
+    }).filter(Boolean);
+    
+    // Gabungkan setiap bagian (term) dengan AND implisit
+    // Parser akan menangani (A+B)(C+D)
+    return parts.join('');
+}
+
 // Fungsi untuk menjalankan simplifikasi berdasarkan state K-Map saat ini
-function simplifyFromKMap() {
-    const n = currentKMap.n, vars = currentKMap.vars; // Ambil info dari state
-    if (n === 0) { // Kasus khusus jika tidak ada variabel
+// (MODIFIKASI: sekarang me-return string SOP)
+// Fungsi untuk menjalankan simplifikasi berdasarkan state K-Map saat ini
+// (MODIFIKASI: sekarang me-return string SOP/POS dan menerima mode)
+function simplifyFromKMap(mode = 'SOP') {
+    const n = currentKMap.n, vars = currentKMap.vars;
+    let resultString; // Variabel untuk menyimpan hasil SOP atau POS
+
+    if (n === 0) {
+        // Kasus khusus jika tidak ada variabel (K-Map 1 sel)
         const v = currentKMap.cells[0] || 0;
-        els.outSimplified.textContent = (v === 1) ? '1' : '0';
-        return;
+        resultString = (v === 1) ? '1' : '0';
+        // Mode tidak relevan untuk 0-variabel
+    } else {
+        // Ambil don't care (selalu sama untuk SOP atau POS)
+        const dcs = collectDontCaresFromKMap(); 
+        
+        if (mode === 'POS') {
+            // ---- Mode POS ----
+            // 1. Kumpulkan Maxterm (0s)
+            const maxterms = collectMaxtermsFromKMap();
+            // 2. Sederhanakan F' (fungsi dari 0s) menggunakan qmSimplify
+            const { implicants } = qmSimplify(maxterms, dcs, vars);
+            // 3. Konversi ke string POS (menerapkan De Morgan)
+            resultString = implicantsToPOS(implicants, vars);
+        } else {
+            // ---- Mode SOP (default) ----
+            // 1. Kumpulkan Minterm (1s)
+            const minterms = collectMintermsFromKMap();
+            // 2. Sederhanakan F (fungsi dari 1s) menggunakan qmSimplify
+            const { implicants } = qmSimplify(minterms, dcs, vars);
+            // 3. Konversi ke string SOP
+            resultString = implicantsToSOP(implicants, vars);
+        }
     }
-    const ms = collectMintermsFromKMap(); // Kumpulkan minterm (1)
-    const dcs = collectDontCaresFromKMap(); // Kumpulkan don't care (d)
-    // Jalankan algoritma Quine-McCluskey
-    const { sop } = qmSimplify(ms, dcs, vars);
-    els.outSimplified.textContent = sop; // Tampilkan hasil SOP
+    
+    els.outSimplified.textContent = resultString; // Tampilkan hasil di kotak output
+    return resultString; // Kembalikan string hasil
 }
 
 /* =======================
  * Event Listeners (Pengatur Interaksi UI)
  * ======================= */
 
-// Klik Tombol Evaluasi
+// Klik Tombol Evaluasi (LOGIKA DIPERBAIKI)
 els.btnEval.addEventListener('click', () => {
     try {
         els.errorBox.style.display = 'none'; // Sembunyikan error lama
 
-        // 1. Dapatkan Konteks Variabel dari Dropdown
-        const nVars = parseInt(els.kmapVarSelect.value, 10);
-        const kmapVars = CONTEXT_VARS[nVars]; // misal: ['A', 'B', 'C']
-
-        // 2. Baca & Validasi Ekspresi
+        // 1. Baca Ekspresi
         const expr = els.expr.value.trim();
         if (!expr) throw new Error('Masukkan ekspresi.');
-        const detectedVars = extractVars(expr); // Variabel yang ada di ekspresi
-        // Cek apakah ada variabel di ekspresi yang TIDAK ADA di konteks
+        
+        // 2. Deteksi Variabel & TENTUKAN nVars
+        const detectedVars = extractVars(expr);
+        
+        let nVars; 
+        if (detectedVars.length > 0) {
+            if (detectedVars.includes('D')) nVars = 4;
+            else if (detectedVars.includes('C')) nVars = 3;
+            else nVars = 2;
+        } else {
+            nVars = currentKMap.n || 3; 
+        }
+
+        // 3. Dapatkan Konteks Variabel
+        const kmapVars = CONTEXT_VARS[nVars]; 
+
+        // 4. Validasi Ulang
         const invalidVars = detectedVars.filter(v => !kmapVars.includes(v));
         if (invalidVars.length > 0) {
             throw new Error(`Variabel '${invalidVars.join(',')}' tidak ada dalam konteks K-Map ${nVars}-variabel (${kmapVars.join(',')}).`);
         }
-
-        // 3. Proses Ekspresi -> RPN -> Tabel Kebenaran
+        
+        // 5. Proses Ekspresi -> RPN -> Tabel Kebenaran
         const tokens = tokenize(expr);
-        console.log("Tokens:", JSON.stringify(tokens)); // Debug: Tampilkan token
-        currentRPN = toRPN(tokens); // Simpan RPN untuk evaluasi
-        console.log("RPN:", JSON.stringify(currentRPN)); // Debug: Tampilkan RPN
-        // Buat tabel kebenaran LENGKAP sesuai konteks (kmapVars)
-        const rows = buildTruthTable(kmapVars, currentRPN);
-        renderTruthTable(kmapVars, rows); // Tampilkan tabel ke DOM
+        currentRPN = toRPN(tokens); 
+        // PANGGILAN DIPERBARUI: kirim 'null' untuk argumen ketiga
+        const rows = buildTruthTable(kmapVars, currentRPN, null);
+        renderTruthTable(kmapVars, rows); 
 
-        // 4. Hitung Minterm & Update K-Map
-        const minFull = rows.filter(r => r.y === 1).map(r => r.m); // Dapatkan array minterm (hasil Y=1)
-        console.log("Minterms:", minFull); // Debug: Tampilkan minterm
-        initKMap(nVars, kmapVars);       // Reset & gambar ulang K-Map sesuai konteks
-        paintKMapFromMinterms(minFull); // Warnai sel K-Map sesuai minterm
+        // 6. Hitung Minterm & Update K-Map
+        const minFull = rows.filter(r => r.y === 1).map(r => r.m); 
+        initKMap(nVars, kmapVars);       
+        paintKMapFromMinterms(minFull); // Warnai sel K-Map (hanya 0 dan 1)
 
-        // 5. Sederhanakan & Tampilkan Hasil
-        const { sop } = qmSimplify(minFull, [], kmapVars); // Sederhanakan (tanpa don't care awal)
-        console.log("SOP Result:", sop); // Debug: Tampilkan hasil SOP
-        els.outSimplified.textContent = sop; // Tampilkan SOP
+        // === PERBAIKAN DIMULAI DI SINI ===
 
-        // 6. Update Panel Statistik
+        // 7. Sederhanakan & Tampilkan Hasil
+        //    Kita panggil simplifyFromKMap() agar konsisten
+        //    (Ini akan membaca K-Map dan auto-update els.outSimplified.textContent)
+        const sop = simplifyFromKMap(); 
+
+        // 8. Update Panel Statistik (Pills)
         setPills(kmapVars, minFull, sop);
+        
+        // 9. (PERBAIKAN BUG) Update kotak input minterm impor/ekspor
+        //    Kita gunakan 'minFull' karena K-Map baru saja di-paint (belum ada 'd')
+        els.mintermIO.value = minFull.join(',');
+
+        // === PERBAIKAN SELESAI ===
 
     } catch (e) { // Tangani jika ada error saat proses
         console.error("Evaluation Error:", e); // Log error ke console (untuk debug)
@@ -554,19 +647,16 @@ els.btnEval.addEventListener('click', () => {
     }
 });
 
-// Klik Tombol Bersihkan
+// Klik Tombol Bersihkan (LOGIKA DIUBAH)
 els.btnClear.addEventListener('click', () => {
-    // Reset UI K-Map sesuai ukuran yang dipilih di dropdown
-    const nVars = parseInt(els.kmapVarSelect.value, 10);
+    // Reset UI K-Map sesuai ukuran SAAT INI
+    // Jika belum ada (n=0), default ke 3.
+    const nVars = currentKMap.n || 3; 
     setupKMapUI(nVars);
 });
 
-// Ganti Pilihan Dropdown Ukuran K-Map
-els.kmapVarSelect.addEventListener('change', () => {
-     // Reset UI K-Map sesuai ukuran BARU yang dipilih
-     const nVars = parseInt(els.kmapVarSelect.value, 10);
-     setupKMapUI(nVars);
-});
+// Ganti Pilihan Dropdown Ukuran K-Map (DIHAPUS)
+// els.kmapVarSelect.addEventListener('change', () => { ... });
 
 // Klik Tombol Reset K-Map
 els.btnReset.addEventListener('click', () => {
@@ -575,8 +665,23 @@ els.btnReset.addEventListener('click', () => {
 });
 
 // Klik Tombol Sederhanakan (SOP)
-els.btnSimplify.addEventListener('click', () => {
-    simplifyFromKMap(); // Jalankan simplifikasi berdasarkan K-Map saat ini
+els.btnSimplifySOP.addEventListener('click', () => {
+    const sop = simplifyFromKMap('SOP'); // Panggil mode SOP
+    els.expr.value = sop; // Set string SOP ke input Ekspresi Boolean
+    
+    // Update panel statistik juga
+    const minterms = collectMintermsFromKMap(); // Pill minterm tetap minterm
+    setPills(currentKMap.vars, minterms, sop); // Tampilkan SOP di pill
+});
+
+// BARU: Klik Tombol Sederhanakan (POS)
+els.btnSimplifyPOS.addEventListener('click', () => {
+    const pos = simplifyFromKMap('POS'); // Panggil mode POS
+    els.expr.value = pos; // Set string POS ke input Ekspresi Boolean
+    
+    // Update panel statistik juga
+    const minterms = collectMintermsFromKMap(); // Pill minterm tetap minterm
+    setPills(currentKMap.vars, minterms, pos); // Tampilkan POS di pill
 });
 
 // Klik pada Sel K-Map (Event Delegation)
@@ -597,31 +702,96 @@ els.kmap.addEventListener('click', (e) => {
 });
 
 // Klik Tombol Impor Minterm
+// (MODIFIKASI: update #expr DAN auto-detect size)
+// Klik Tombol Impor Minterm
+// (MODIFIKASI: update #expr, auto-detect size, DAN update Tabel Kebenaran)
 els.btnImport.addEventListener('click', () => {
-    const txt = els.mintermIO.value.trim(); // Ambil teks dari input
-    if (!txt) { // Jika kosong, reset K-Map
-        paintKMapFromMinterms([]);
-        els.outSimplified.textContent = '—';
-        return;
+    try {
+        els.errorBox.style.display = 'none'; // Sembunyikan error lama
+        const txt = els.mintermIO.value.trim(); // Ambil teks dari input
+        
+        // 1. Parse semua angka
+        const parts = txt.split(/[,\s]+/)
+            .map(s => s.trim())
+            .filter(Boolean)
+            .map(Number)
+            .filter(n => Number.isInteger(n) && n >= 0);
+
+        if (!parts.length) {
+            // Jika input kosong atau tidak valid, reset K-Map saat ini
+            const nVars = currentKMap.n || 3;
+            const kmapVars = CONTEXT_VARS[nVars];
+            paintKMapFromMinterms([]);
+            const sop = simplifyFromKMap('SOP'); 
+            els.expr.value = sop; 
+            setPills(kmapVars, [], sop);
+            
+            // Build tabel kebenaran kosong
+            const rows = buildTruthTable(kmapVars, null, new Set()); // Pass empty set
+            renderTruthTable(kmapVars, rows); // Render tabel
+            
+            return;
+        }
+
+        // 2. Tentukan nVars berdasarkan minterm terbesar
+        const maxMinterm = Math.max(...parts);
+        let nVars;
+        if (maxMinterm < 4) nVars = 2;
+        else if (maxMinterm < 8) nVars = 3;
+        else if (maxMinterm < 16) nVars = 4;
+        else throw new Error(`Minterm '${maxMinterm}' terlalu besar. Maksimum 15 (untuk 4 variabel).`);
+        
+        // 3. Dapatkan konteks variabel
+        const kmapVars = CONTEXT_VARS[nVars];
+        
+        // 4. Inisialisasi ulang K-Map JIKA ukurannya berubah
+        if (nVars !== currentKMap.n) {
+            initKMap(nVars, kmapVars);
+        }
+        
+        // 5. Filter ulang parts dan buat Set
+        const finalParts = parts.filter(n => n < (1 << nVars));
+        const mintermSet = new Set(finalParts); // Buat Set untuk dikirim ke buildTruthTable
+        
+        // === PERBAIKAN DIMULAI DI SINI ===
+        
+        // 6. Bangun dan Render Tabel Kebenaran (DARI MINTERM)
+        //    Kita set RPN ke null, tapi kirim mintermSet
+        currentRPN = null; // Hapus RPN lama, karena sudah tidak relevan
+        const rows = buildTruthTable(kmapVars, null, mintermSet);
+        renderTruthTable(kmapVars, rows);
+        
+        // === PERBAIKAN SELESAI ===
+
+        // 7. Warnai K-Map
+        paintKMapFromMinterms(finalParts); 
+        
+        // 8. Sederhanakan dan update
+        const sop = simplifyFromKMap('SOP'); 
+        els.expr.value = sop; 
+        
+        // 9. Update panel statistik
+        setPills(kmapVars, finalParts.sort((a,b) => a-b), sop);
+
+    } catch (e) {
+        // Tangani jika ada error (misal minterm > 15)
+        console.error("Import Error:", e);
+        els.errorBox.textContent = "Kesalahan: " + e.message;
+        els.errorBox.style.display = 'block';
     }
-    // Parse teks input (pisahkan dengan koma/spasi, ubah ke angka, filter yang valid)
-    const parts = txt.split(/[,\s]+/)
-        .map(s => s.trim())
-        .filter(Boolean)
-        .map(Number)
-        .filter(n => Number.isInteger(n) && n >= 0 && n < currentKMap.total);
-
-    paintKMapFromMinterms(parts); // Warnai K-Map (hanya nilai 1)
-    simplifyFromKMap(); // Langsung sederhanakan (hanya berdasarkan nilai 1)
 });
-
 // Klik Tombol Ekspor Minterm
+// (MODIFIKASI: sederhanakan dan update #expr)
 els.btnExport.addEventListener('click', () => {
+    // 1. Logika lama: Ekspor minterm/dc ke input
     const ms = collectMintermsFromKMap(); // Kumpulkan minterm (1)
     const dcs = collectDontCaresFromKMap(); // Kumpulkan don't care (d)
-    // Gabungkan keduanya, hapus duplikat, urutkan
     const all = [...new Set([...ms, ...dcs])].sort((a, b) => a - b);
     els.mintermIO.value = all.join(','); // Tampilkan di input
+    
+    // 2. Logika baru: Sederhanakan dan update input Ekspresi Boolean
+    const sop = simplifyFromKMap(); // Jalankan simplifikasi dari K-Map saat ini
+    els.expr.value = sop; // Set string SOP ke input Ekspresi Boolean
 });
 
 // Ganti Toggle Tema
@@ -630,19 +800,11 @@ els.themeToggle.addEventListener('change', () => {
     document.body.classList.toggle('light-mode', els.themeToggle.checked);
 });
 
-// Fungsi untuk memuat contoh ekspresi
+// Fungsi untuk memuat contoh ekspresi (Tidak perlu diubah)
 const loadExample = (expr) => {
     els.expr.value = expr; // Set input ekspresi
-    // Deteksi variabel tertinggi untuk menentukan ukuran K-Map default
-    const vars = extractVars(expr);
-    if (vars.includes('D')) {
-        els.kmapVarSelect.value = '4';
-    } else if (vars.includes('C')) {
-        els.kmapVarSelect.value = '3';
-    } else {
-        els.kmapVarSelect.value = '2';
-    }
-    els.btnEval.click(); // Jalankan evaluasi
+    // Cukup klik tombol Evaluasi, karena tombol itu sekarang sudah pintar
+    els.btnEval.click(); // Jalankan evaluasi (yang akan auto-detect size)
 }
 // Pasang listener untuk tombol contoh F1-F5
 byId('btn-ex1').addEventListener('click', () => loadExample("A'B + AC"));
@@ -654,7 +816,7 @@ byId('btn-ex5').addEventListener('click', () => loadExample("A'B' + AB"));
 /* =======================
  * Inisialisasi Aplikasi Saat Memuat
  * ======================= */
-// Set dropdown ke 3 variabel sebagai default
-els.kmapVarSelect.value = '3';
+// Set dropdown ke 3 variabel (DIHAPUS)
+// els.kmapVarSelect.value = '3';
 // Jalankan evaluasi untuk ekspresi default ("A'B + AC")
 els.btnEval.click();

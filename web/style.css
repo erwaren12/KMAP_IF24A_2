@@ -193,6 +193,11 @@ body.light-mode .card:hover {
     margin: 10px 0 14px; /* Jarak atas/bawah field */
 }
 
+/* Tambahkan di mana saja, misalnya di bagian .field */
+.card h2 + .field {
+    margin-top: 10px;
+}
+
 /* Styling Label */
 label {
     color: var(--muted);
