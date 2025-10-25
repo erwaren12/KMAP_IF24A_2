@@ -36,18 +36,18 @@ body.light-mode {
     --accent-2-rgb: 0, 123, 255;
     --warn: #ffc107;
     --warn-text: #333;
-    
+
     /* PERBAIKAN: Garis pemisah dibuat lebih gelap agar tegas */
-    --grid: #adb5bd; 
-    
+    --grid: #adb5bd;
+
     --on: #28a745;
     --on-2: #2dbc4e;
     --off: #e9ecef;
     --dontcare: #fff3cd;
-    
+
     /* PERBAIKAN: Border 'dont-care' dibuat lebih gelap */
-    --dontcare-border: #ffc107; 
-    
+    --dontcare-border: #ffc107;
+
     --badge: #e2e8f0;
     --code: #f0f4f9;
     background: var(--bg);
@@ -58,13 +58,14 @@ body.light-mode {
     box-sizing: border-box;
 }
 
-/* Styling dasar body */
+/* Styling dasar body - TANPA ANIMASI */
 body {
     margin: 0;
     font: 14px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
     color: var(--ink);
     background: var(--bg);
     transition: background .3s ease, color .3s ease; /* Transisi untuk ganti tema */
+    /* Properti animasi strobe telah dihapus */
 }
 
 /* Styling Header */
@@ -136,7 +137,7 @@ header h1 {
 /* === GAYA KOMPONEN & EFEK === */
 /* ================================ */
 
-/* Styling umum untuk Kartu/Panel */
+/* Styling umum untuk Kartu/Panel - TANPA ANIMASI */
 .card {
     background: var(--panel);
     border: 1px solid var(--grid);
@@ -144,6 +145,7 @@ header h1 {
     padding: 16px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, .05);
     transition: all 0.2s ease-out;
+    /* Properti animasi strobe telah dihapus */
 }
 
 /* Efek hover pada kartu */
@@ -275,7 +277,7 @@ body.light-mode button {
     background: var(--accent-2);
     border-color: #0069d9;
     /* PERBAIKAN: Paksa teks tombol utama jadi putih agar terbaca */
-    color: white; 
+    color: white;
 }
 body.light-mode button:not(:disabled):hover {
     box-shadow: 0 4px 15px -2px rgba(var(--accent-2-rgb), 0.4);
@@ -410,11 +412,11 @@ th, td {
     user-select: none;
     position: relative;
     transition: transform .1s ease, background .2s ease, border-color .2s ease;
-    
+
     /* MODIFIKASI: Perbesar nilai utama & beri ruang bawah */
     font-size: 18px;
     font-weight: 600;
-    padding-bottom: 10px; 
+    padding-bottom: 10px;
 }
 .kcell.on {
     background: linear-gradient(180deg, var(--on-2), var(--on));
@@ -439,7 +441,7 @@ th, td {
     bottom: 4px; /* Posisikan di bawah */
     left: 50%; /* Posisikan di tengah horizontal */
     transform: translateX(-50%); /* Sempurnakan posisi tengah */
-    
+
     color: var(--muted); /* Warna redup */
     font-size: 11px; /* Ukuran font kecil */
     font-weight: 400; /* Kembali ke font normal */
@@ -537,7 +539,7 @@ input:checked+.slider:before { transform: translateX(18px); }
 /* ================================ */
 @media print {
     /* Sembunyikan elemen spesifik: header, sidebar, stats, tabel kebenaran */
-    body > header, 
+    body > header,
     body > .dashboard-layout > aside.sidebar,
     body > .dashboard-layout > .main-content > .stats-grid,
     body > .dashboard-layout > .main-content > .results-grid > .card:not(#kmap-print-card) { /* Sembunyikan kartu lain (Tabel Kebenaran) */
@@ -556,6 +558,8 @@ input:checked+.slider:before { transform: translateX(18px); }
         box-shadow: none !important;
         background: #ffffff !important; /* Paksa background putih */
         color: #000000 !important; /* Paksa teks hitam */
+        /* Hentikan animasi saat cetak */
+        animation: none !important;
     }
 
     /* Atur tampilan kartu K-Map untuk dicetak */
@@ -569,8 +573,10 @@ input:checked+.slider:before { transform: translateX(18px); }
         margin: 0 !important;
         padding: 16px !important;
         background: #ffffff !important; /* Background putih */
+        /* Hentikan animasi kartu saat cetak */
+        animation: none !important;
     }
-    
+
     /* Pastikan semua elemen di dalam kartu K-Map terlihat */
      #kmap-print-card * {
         visibility: visible !important;
@@ -591,7 +597,7 @@ input:checked+.slider:before { transform: translateX(18px); }
         background: #fff !important; /* Background putih */
         color: #000 !important; /* Teks hitam */
         /* Pastikan padding bawah tidak ada saat cetak */
-        padding-bottom: 0 !important; 
+        padding-bottom: 0 !important;
         height: 44px !important; /* Kembalikan tinggi */
         font-size: 14px !important; /* Reset font size */
         font-weight: normal !important; /* Reset font weight */
@@ -606,8 +612,8 @@ input:checked+.slider:before { transform: translateX(18px); }
         color: #555 !important;
         font-style: italic;
      }
-     /* Nomor minterm pada ::after tetap terlihat (diatur di @media print #kmap-print-card *) */
-     .kcell::after { 
+     /* Nomor minterm pada ::after tetap terlihat */
+     .kcell::after {
          color: #555 !important;
          opacity: 1 !important;
          font-size: 10px !important; /* Kecilkan sedikit */
@@ -631,3 +637,6 @@ input:checked+.slider:before { transform: translateX(18px); }
          font-size: 14px;
      }
 }
+
+/* Keyframes untuk strobe DIHAPUS */
+/* @keyframes strobeEffect { ... } */

@@ -57,7 +57,7 @@ function tokenize(raw) {
     let i = 0;
     while (i < src.length) {
         let ch = src[i];
-        
+
         // Angka (0 atau 1)
         if (ch === '0' || ch === '1') {
             tokens.push({ type: 'NUM', value: Number(ch) }); i++;
@@ -89,7 +89,7 @@ function tokenize(raw) {
         if (ch === '&' || ch === '*' || ch === '.') { tokens.push({ type: 'OP', value: 'AND', precedence: 3, associativity: 'left' }); i++; continue; }
         if (ch === '+' || ch === '|') { tokens.push({ type: 'OP', value: 'OR', precedence: 1, associativity: 'left' }); i++; continue; }
         if (ch === '^') { tokens.push({ type: 'OP', value: 'XOR', precedence: 2, associativity: 'left' }); i++; continue; }
-        
+
         throw new Error("Karakter tidak dikenali pada posisi " + i + ": '" + ch + "'");
     }
     return tokens;
@@ -126,16 +126,16 @@ function toRPN(tokens) {
     // Langkah 2: Algoritma Shunting Yard standar
     for (let i = 0; i < withImplicit.length; i++) {
         const t = withImplicit[i];
-        
+
         // Var/Num/NOT Postfix -> langsung ke output
-        if (t.type === 'VAR' || t.type === 'NUM' || (t.type === 'OP' && t.postfix)) { 
-            output.push(t); continue; 
+        if (t.type === 'VAR' || t.type === 'NUM' || (t.type === 'OP' && t.postfix)) {
+            output.push(t); continue;
         }
         // Operator Prefix (NOT) -> ke stack
-        if (t.type === 'OP' && t.prefix) { 
-            stack.push(t); continue; 
+        if (t.type === 'OP' && t.prefix) {
+            stack.push(t); continue;
         }
-        
+
         // Operator Biner (AND, OR, XOR)
         if (t.type === 'OP' && !t.unary) {
             // Selama operator di stack > prioritasnya, pindahkan ke output
@@ -148,7 +148,7 @@ function toRPN(tokens) {
             stack.push(t); // Masukkan operator saat ini ke stack
             continue;
         }
-        
+
         // Kurung
         if (t.type === 'LP') { stack.push(t); continue; }
         if (t.type === 'RP') {
@@ -163,7 +163,7 @@ function toRPN(tokens) {
             continue;
         }
     }
-    
+
     // Pindahkan sisa operator di stack ke output
     while (stack.length) {
         const s = stack.pop();
@@ -212,7 +212,7 @@ function evalRPN(rpn, env) {
 /* =======================
  * Quine–McCluskey (SOP) (Dengan Benchmark)
  * ======================= */
- 
+
 // Ini adalah inti dari fitur simplifikasi.
 // Implementasi algoritma Quine-McCluskey untuk menemukan
 // Prime Implicants, diikuti greedy cover untuk menemukan
@@ -238,14 +238,14 @@ function qmSimplify(minterms, dontcares, varNames) {
     const minBins = minterms.map(m => toBin(m, W));
     const dcBins = dontcares.map(m => toBin(m, W));
     const allBins = [...new Set([...minBins, ...dcBins])];
-    
+
     // Jika semua sel (termasuk 'd') adalah 1, hasil = 1
     if (allBins.length === (1 << W) && dcBins.length < allBins.length) return { implicants: ['-'.repeat(W)], sop: '1', time: performance.now() - t0 };
-    
+
     // Langkah 1: Kelompokkan berdasarkan jumlah angka '1'
     let groups = {};
     for (const b of allBins) { const k = countOnes(b); (groups[k] || (groups[k] = [])).push({ bin: b, used: false, from: [b] }); }
-    
+
     // Langkah 2: Kombinasikan grup secara rekursif
     let newGroups = {}; let anyCombined = true; const allCombinedLevels = [];
     while (anyCombined) {
@@ -282,18 +282,18 @@ function qmSimplify(minterms, dontcares, varNames) {
     for (const arr of allCombinedLevels) for (const p of arr) finalPrimes.add(p);
     for (const k in groups) for (const it of groups[k]) finalPrimes.add(it.bin);
     const primeList = Array.from(finalPrimes);
-    
+
     // Langkah 3: Buat tabel Petrick / Greedy Cover
     const minBin = minBins; const cover = {};
     for (let i = 0; i < minBin.length; i++) { cover[i] = []; for (let j = 0; j < primeList.length; j++) if (covers(primeList[j], minBin[i])) cover[i].push(j); }
-    
+
     // Langkah 4: Pilih Essential Prime Implicants (EPI)
     const chosen = new Set(); const coveredRows = new Set();
     for (let i = 0; i < minBin.length; i++) if (cover[i].length === 1) chosen.add(cover[i][0]);
-    
+
     const markCovered = () => { let changed = false; for (let i = 0; i < minBin.length; i++) { if (coveredRows.has(i)) continue; for (const j of (cover[i] || [])) { if (chosen.has(j)) { coveredRows.add(i); changed = true; break; } } } return changed; };
     markCovered();
-    
+
     // Langkah 5: Greedy cover untuk minterm sisanya
     while (coveredRows.size < minBin.length) {
         let bestJ = -1, bestCover = -1;
@@ -304,11 +304,11 @@ function qmSimplify(minterms, dontcares, varNames) {
         if (bestJ === -1) break; // Tidak ada lagi yg bisa dipilih
         chosen.add(bestJ); markCovered();
     }
-    
+
     // Langkah 6: Konversi hasil ke string SOP
     const implicants = Array.from(chosen).map(j => primeList[j]);
     const sop = implicantsToSOP(implicants, varNames);
-    
+
     const t1 = performance.now(); // CATAT WAKTU SELESAI
     return { implicants, sop, time: t1 - t0 };
 }
@@ -348,16 +348,16 @@ function buildTruthTable(vars, rpn, mintermSet = null) {
     for (let m = 0; m < total; m++) {
         const env = {};
         for (let i = 0; i < n; i++) env[vars[i]] = (m >> (n - 1 - i)) & 1;
-        
+
         let y;
         if (useMintermSet) {
             // Mode Impor: Y=1 jika 'm' ada di set
             y = mintermSet.has(m) ? 1 : 0;
         } else {
             // Mode Evaluasi: Y = hasil evalRPN
-            y = rpn ? evalRPN(rpn, env) : 0; 
+            y = rpn ? evalRPN(rpn, env) : 0;
         }
-        
+
         rows.push({ m, env, y });
     }
     return rows;
@@ -405,7 +405,7 @@ function setPills(vars, minterms, sop, benchmark) {
     els.varsPill.textContent = `${vars.length ? vars.join(', ') : '—'}`;
     els.mintermsPill.textContent = `${minterms.length ? minterms.join(',') : '—'}`;
     els.simpPill.textContent = `${sop || '—'}`;
-    
+
     // Tampilkan benchmark di panel 'Sederhana'
     els.benchmarkPill.textContent = (benchmark === undefined) ? '—' : `${benchmark.toFixed(2)} ms`;
 }
@@ -487,7 +487,7 @@ function initKMap(nVars, varNames) {
 function setupKMapUI(nVars) {
     const kmapVars = CONTEXT_VARS[nVars];
     initKMap(nVars, kmapVars);
-    
+
     // Reset semua output
     els.expr.value = '';
     currentRPN = null;
@@ -510,7 +510,7 @@ function paintKMapFromMinterms(minterms) {
         const cell = children[k];
         const idx = Number(cell.dataset.index);
         const isOne = mintermSet.has(idx);
-        
+
         // Update state internal & tampilan DOM
         currentKMap.cells[idx] = isOne ? 1 : 0;
         cell.classList.remove('dont-care');
@@ -543,7 +543,7 @@ function collectMaxtermsFromKMap() {
 function implicantsToPOS(impls, vars) {
     if (!impls.length) return '1';
     if (impls.some(mask => mask.split('').every(c => c === '-'))) return '0';
-    
+
     const parts = impls.map(mask => {
         const literals = [];
         for (let i = 0; i < mask.length; i++) {
@@ -557,7 +557,7 @@ function implicantsToPOS(impls, vars) {
         if (literals.length === 1) return literals[0];
         return `(${literals.join(' + ')})`; // Gabung dengan OR
     }).filter(Boolean);
-    
+
     return parts.join(''); // Gabung dengan AND implisit
 }
 
@@ -575,8 +575,8 @@ function simplifyFromKMap(mode = 'SOP') {
         const v = currentKMap.cells[0] || 0;
         resultString = (v === 1) ? '1' : '0';
     } else {
-        const dcs = collectDontCaresFromKMap(); 
-        
+        const dcs = collectDontCaresFromKMap();
+
         if (mode === 'POS') {
             // ---- Mode POS ----
             // 1. Ambil 0s (Maxterms)
@@ -596,9 +596,9 @@ function simplifyFromKMap(mode = 'SOP') {
             execTime = time;
         }
     }
-    
+
     els.outSimplified.textContent = resultString;
-    return { resultString: resultString, time: execTime }; 
+    return { resultString: resultString, time: execTime };
 }
 
 /* =======================
@@ -614,9 +614,9 @@ els.btnEval.addEventListener('click', () => {
         const expr = els.expr.value.trim();
         if (!expr) throw new Error('Masukkan ekspresi.');
         const detectedVars = extractVars(expr);
-        
+
         // 2. Tentukan Ukuran K-Map (nVars) secara otomatis
-        let nVars; 
+        let nVars;
         if (detectedVars.length > 0) {
             if (detectedVars.includes('D')) nVars = 4;
             else if (detectedVars.includes('C')) nVars = 3;
@@ -626,25 +626,25 @@ els.btnEval.addEventListener('click', () => {
         }
 
         // 3. Validasi
-        const kmapVars = CONTEXT_VARS[nVars]; 
+        const kmapVars = CONTEXT_VARS[nVars];
         const invalidVars = detectedVars.filter(v => !kmapVars.includes(v));
         if (invalidVars.length > 0) {
             throw new Error(`Variabel '${invalidVars.join(',')}' tidak ada dalam konteks K-Map ${nVars}-variabel.`);
         }
-        
+
         // 4. Parse & Eval
         const tokens = tokenize(expr);
-        currentRPN = toRPN(tokens); 
+        currentRPN = toRPN(tokens);
         const rows = buildTruthTable(kmapVars, currentRPN, null); // Mode RPN
-        renderTruthTable(kmapVars, rows); 
+        renderTruthTable(kmapVars, rows);
 
         // 5. Update K-Map
-        const minFull = rows.filter(r => r.y === 1).map(r => r.m); 
-        initKMap(nVars, kmapVars);       
-        paintKMapFromMinterms(minFull); 
+        const minFull = rows.filter(r => r.y === 1).map(r => r.m);
+        initKMap(nVars, kmapVars);
+        paintKMapFromMinterms(minFull);
 
         // 6. Sederhanakan (default SOP) & Update UI
-        const { resultString: sop, time } = simplifyFromKMap('SOP'); 
+        const { resultString: sop, time } = simplifyFromKMap('SOP');
         setPills(kmapVars, minFull, sop, time); // Update pills
         els.mintermIO.value = minFull.join(','); // Update minterm I/O
 
@@ -661,6 +661,18 @@ els.btnClear.addEventListener('click', () => {
     setupKMapUI(3);
 });
 
+// BARU: Tekan Enter di Input Ekspresi -> Klik Tombol Evaluasi
+els.expr.addEventListener('keydown', (event) => {
+    // Periksa apakah tombol yang ditekan adalah Enter
+    if (event.key === 'Enter') {
+        // Hentikan aksi default Enter (misal: submit form jika ada)
+        event.preventDefault();
+        // Secara programatik klik tombol Evaluasi
+        els.btnEval.click();
+    }
+});
+
+
 // Tombol RESET K-MAP: Hanya reset K-Map dan output
 els.btnReset.addEventListener('click', () => {
     paintKMapFromMinterms([]);
@@ -674,9 +686,9 @@ els.btnReset.addEventListener('click', () => {
 els.btnSimplifySOP.addEventListener('click', () => {
     const { resultString: sop, time } = simplifyFromKMap('SOP'); // Panggil mode SOP
     els.expr.value = sop; // Update ekspresi
-    
+
     // Update panel statistik
-    const minterms = collectMintermsFromKMap(); 
+    const minterms = collectMintermsFromKMap();
     setPills(currentKMap.vars, minterms, sop, time);
 });
 
@@ -684,9 +696,9 @@ els.btnSimplifySOP.addEventListener('click', () => {
 els.btnSimplifyPOS.addEventListener('click', () => {
     const { resultString: pos, time } = simplifyFromKMap('POS'); // Panggil mode POS
     els.expr.value = pos; // Update ekspresi
-    
+
     // Update panel statistik
-    const minterms = collectMintermsFromKMap(); 
+    const minterms = collectMintermsFromKMap();
     setPills(currentKMap.vars, minterms, pos, time);
 });
 
@@ -713,7 +725,7 @@ els.btnImport.addEventListener('click', () => {
     try {
         els.errorBox.style.display = 'none';
         const txt = els.mintermIO.value.trim();
-        
+
         // 1. Parse semua angka
         const parts = txt.split(/[,\s]+/)
             .map(s => s.trim())
@@ -726,8 +738,8 @@ els.btnImport.addEventListener('click', () => {
             const nVars = currentKMap.n || 3;
             const kmapVars = CONTEXT_VARS[nVars];
             paintKMapFromMinterms([]);
-            const { resultString: sop, time } = simplifyFromKMap('SOP'); 
-            els.expr.value = sop; 
+            const { resultString: sop, time } = simplifyFromKMap('SOP');
+            els.expr.value = sop;
             setPills(kmapVars, [], sop, time);
             const rows = buildTruthTable(kmapVars, null, new Set());
             renderTruthTable(kmapVars, rows);
@@ -741,27 +753,27 @@ els.btnImport.addEventListener('click', () => {
         else if (maxMinterm < 8) nVars = 3;
         else if (maxMinterm < 16) nVars = 4;
         else throw new Error(`Minterm '${maxMinterm}' terlalu besar (Maks 15).`);
-        
+
         const kmapVars = CONTEXT_VARS[nVars];
-        
+
         // 3. Gambar ulang K-Map jika ukurannya berubah
         if (nVars !== currentKMap.n) {
             initKMap(nVars, kmapVars);
         }
-        
+
         // 4. Update Tabel Kebenaran (dari MintermSet)
         const finalParts = parts.filter(n => n < (1 << nVars));
-        const mintermSet = new Set(finalParts); 
+        const mintermSet = new Set(finalParts);
         currentRPN = null; // Hapus RPN lama, tidak relevan
         const rows = buildTruthTable(kmapVars, null, mintermSet); // Mode MintermSet
         renderTruthTable(kmapVars, rows);
-        
+
         // 5. Update K-Map
-        paintKMapFromMinterms(finalParts); 
-        
+        paintKMapFromMinterms(finalParts);
+
         // 6. Sederhanakan (default SOP) & Update UI
-        const { resultString: sop, time } = simplifyFromKMap('SOP'); 
-        els.expr.value = sop; 
+        const { resultString: sop, time } = simplifyFromKMap('SOP');
+        els.expr.value = sop;
         setPills(kmapVars, finalParts.sort((a,b) => a-b), sop, time);
 
     } catch (e) {
@@ -776,25 +788,24 @@ els.btnExport.addEventListener('click', () => {
     // 1. Ambil 1s (minterms) dan 'd's (don't cares)
     const ms = collectMintermsFromKMap();
     const dcs = collectDontCaresFromKMap();
-    
+
     // 2. Gabungkan & tampilkan di I/O box
     const all = [...new Set([...ms, ...dcs])].sort((a, b) => a - b);
     els.mintermIO.value = all.join(',');
-    
+
     // 3. Sederhanakan juga (default SOP) agar UI sinkron
     const { resultString: sop, time } = simplifyFromKMap('SOP');
-    els.expr.value = sop; 
+    els.expr.value = sop;
     setPills(currentKMap.vars, ms, sop, time); // Pills hanya tampilkan minterm (1s)
 });
 
 // Ganti Toggle Tema
-// PERUBAHAN: Teks label "Mode" sekarang statis dan tidak diubah lagi
 els.themeToggle.addEventListener('change', () => {
     const isLightMode = els.themeToggle.checked;
-    
+
     // 1. Ganti class di body
     document.body.classList.toggle('light-mode', isLightMode);
-    
+
     // 2. Teks label tidak perlu diubah karena sudah statis "Mode"
 });
 
