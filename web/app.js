@@ -16,7 +16,6 @@
  * ======================= */
 
 // Konstanta Gray Code untuk urutan label K-Map.
-// Ini penting agar sel yang bersebelahan only beda 1 bit.
 const GRAY2 = [0, 1];
 const GRAY4 = [0, 1, 3, 2]; // Urutan: 00, 01, 11, 10
 const GRAY_STRINGS = {
@@ -52,7 +51,7 @@ function extractVars(expr) {
 
 // Mengubah string mentah (misal "A'B + C") menjadi array token
 function tokenize(raw) {
-    const src = raw.replace(/\s+/g, ''); // Hapus semua spasi
+    const src = raw.replace(/\s+/g, '');
     const tokens = [];
     let i = 0;
     while (i < src.length) {
@@ -838,5 +837,25 @@ byId('btn-ex10').addEventListener('click', () => loadExample("(A+B+C)(A'+B)(B+C'
  * Inisialisasi Aplikasi Saat Memuat
  * ======================= */
 
-// Muat ekspresi default saat halaman dibuka
-els.btnEval.click();
+/* =======================
+ * Inisialisasi Aplikasi Saat Memuat
+ * ======================= */
+
+// 1. Gambar struktur K-Map 3 variabel default (kosong)
+//    Kita tetap butuh struktur K-Map agar bisa diklik nanti.
+const initialNVars = 3;
+const initialKMapVars = CONTEXT_VARS[initialNVars];
+initKMap(initialNVars, initialKMapVars);
+
+// 2. Set panel statistik ke keadaan kosong/default
+//    Kirim array kosong untuk vars dan minterms.
+setPills([], [], '—', undefined);
+
+// 3. Pastikan input/output lain juga kosong (meskipun initKMap sebagian melakukannya)
+els.expr.value = '';
+currentRPN = null;
+els.ttHead.innerHTML = '';
+els.ttBody.innerHTML = '';
+els.outSimplified.textContent = '—';
+els.mintermIO.value = '';
+els.errorBox.style.display = 'none';
