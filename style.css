@@ -111,7 +111,7 @@ header h1 {
     background-color: transparent;
 }
 
-/* Gaya Default Logo 2 mode */
+/* Default logo light & dark */
 #logo-tifhub span { 
     display: inline-flex;
     align-items: center;
@@ -149,7 +149,7 @@ body.light-mode #logo-tifhub {
      font-family: 'Arial Black', Gadget, sans-serif;
 }
 
-/*Style logo */
+/*Style logo light mode */
 body.light-mode #logo-tifhub span { 
     background-color: transparent;
     padding: 0;
@@ -445,6 +445,7 @@ body.light-mode td {
 /* === K-MAP BARU (GRID & LABELS) === */
 /* ================================ */
 
+/* Styling K-map */
 .kmap-container { 
     display: grid; 
     grid-template-areas: "corner top" "left   map"; 
@@ -534,7 +535,7 @@ body.light-mode td {
     color: white; 
 }
 
-/* Override K-Map ON untuk light mode (BIRU SANGAT TERANG) */
+/* Override K-Map ON untuk light mode */
 body.light-mode .kcell.on { 
     background: linear-gradient(180deg, var(--on-2), var(--on)); 
     border-color: var(--accent); 
@@ -554,6 +555,7 @@ body.light-mode .kcell.dont-care {
     font-style: italic; 
 }
 
+/* Efek hover K-map */
 .kcell:hover { 
     transform: translateY(-1px) scale(1.02); 
     border-color: var(--accent); 
@@ -710,6 +712,7 @@ body.light-mode input:checked+.slider {
 /* === STYLING KHUSUS CETAK === */
 /* ================================ */
 @media print {
+    /* style print body */
     body > header, body > .dashboard-layout > aside.sidebar, body > .dashboard-layout > .main-content > .stats-grid, body > .dashboard-layout > .main-content > .results-grid > .card:not(#kmap-print-card) { 
         display: none !important;
     }
@@ -725,6 +728,7 @@ body.light-mode input:checked+.slider {
         animation: none !important; 
         }
 
+    /* Style print K-map */    
     #kmap-print-card { 
         display: block !important; 
         visibility: visible !important; 
@@ -793,5 +797,6 @@ body.light-mode input:checked+.slider {
         margin-top: 10px !important; 
         background: none !important; 
         color: #000 !important; 
-        font-size: 14px; }
+        font-size: 14px; 
+    }
 }

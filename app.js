@@ -110,7 +110,7 @@ function toRPN(tokens) {
     const stack = [];  // Tumpukan operator sementara
 
     // Langkah 1: Sisipkan token AND implisit.
-    // Ini adalah 'bumbu' utama agar "AB" bisa dibaca sebagai "A AND B".
+    // Ini adalah 'fungsi' utama agar "AB" bisa dibaca sebagai "A AND B".
     // Logika: jika token 'a' adalah AKHIR operand dan token 'b' adalah AWAL operand,
     // sisipkan 'AND' di antara keduanya.
     const withImplicit = [];
@@ -327,7 +327,7 @@ function implicantsToSOP(impls, vars) {
  * K-Map Logic & Rendering
  * ======================= */
 
-// Fungsi 'ajaib' yang mendefinisikan layout K-Map (baris, kolom, label,
+// Fungsi 'utama' yang mendefinisikan layout K-Map (baris, kolom, label,
 // dan fungsi 'index' untuk mapping (r,c) ke minterm index).
 function kmapLayoutForVars(nVars) {
     if (nVars === 1) return { rows: GRAY2, cols: [0], rowVars: ['A'], colVars: [], index(rc) { return GRAY2[rc.r]; } };
@@ -660,7 +660,7 @@ els.btnClear.addEventListener('click', () => {
     setupKMapUI(3);
 });
 
-// BARU: Tekan Enter di Input Ekspresi -> Klik Tombol Evaluasi
+// Tekan Enter di Input Ekspresi -> Klik Tombol Evaluasi
 els.expr.addEventListener('keydown', (event) => {
     // Periksa apakah tombol yang ditekan adalah Enter
     if (event.key === 'Enter') {
@@ -804,8 +804,6 @@ els.themeToggle.addEventListener('change', () => {
 
     // 1. Ganti class di body
     document.body.classList.toggle('light-mode', isLightMode);
-
-    // 2. Teks label tidak perlu diubah karena sudah statis "Mode"
 });
 
 // Tombol Cetak/PDF K-Map
