@@ -117,7 +117,445 @@
                         <div class="kmap-label-top" id="kmap-label-top"></div>
                         <div class="kmap-label-left" id="kmap-label-left"></div>
                         <div class="kmap-wrapper" aria-label="K-Map scroll area">
-                            <div id="kmap" class="kmap"></div>
+                            <div id="kmap" c<!DOCTYPE html>
+                                <html lang="id">
+                                <head>
+                                    <meta charset="UTF-8">
+                                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                                    <title>Sistem Mitigasi Bencana Geologis Berbasis IoT & Satelit</title>
+                                    
+                                    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+                                    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+                                    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+                                    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+                                    
+                                    <style>
+                                        :root {
+                                            --bg-dark: #050b14;
+                                            --panel-bg: rgba(10, 20, 35, 0.85);
+                                            --neon-cyan: #00f3ff;
+                                            --neon-green: #00ff66;
+                                            --neon-red: #ff003c;
+                                            --neon-yellow: #ffea00;
+                                            --grid-line: rgba(0, 243, 255, 0.05);
+                                        }
+                                
+                                        body {
+                                            font-family: 'Share Tech Mono', monospace;
+                                            background-color: var(--bg-dark);
+                                            color: #e0f2fe;
+                                            margin: 0;
+                                            padding: 15px;
+                                            background-image: 
+                                                linear-gradient(var(--grid-line) 1px, transparent 1px),
+                                                linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+                                            background-size: 30px 30px;
+                                            overflow-x: hidden;
+                                        }
+                                
+                                        body.darurat-mode { animation: layarMerah 1s infinite alternate; }
+                                        @keyframes layarMerah {
+                                            0% { box-shadow: inset 0 0 0px var(--neon-red); }
+                                            100% { box-shadow: inset 0 0 100px var(--neon-red); }
+                                        }
+                                
+                                        .header {
+                                            display: flex; justify-content: space-between; align-items: flex-end;
+                                            border-bottom: 2px solid var(--neon-cyan);
+                                            padding-bottom: 10px; margin-bottom: 20px;
+                                        }
+                                        .judul h1 {
+                                            font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 2.2em;
+                                            margin: 0; color: var(--neon-cyan); letter-spacing: 3px;
+                                            text-shadow: 0 0 10px var(--neon-cyan);
+                                        }
+                                        .judul p { margin: 5px 0 0 0; color: #7dd3fc; }
+                                        
+                                        .koordinat-box { 
+                                            text-align: right; 
+                                            background: rgba(0, 243, 255, 0.1);
+                                            padding: 10px;
+                                            border-radius: 5px;
+                                            border: 1px solid var(--neon-cyan);
+                                            font-size: 0.9em;
+                                            color: var(--neon-cyan);
+                                        }
+                                        .koordinat-box .op-name { color: var(--neon-yellow); font-weight: bold; font-family: 'Orbitron', sans-serif;}
+                                
+                                        .layout-grid { display: grid; grid-template-columns: 350px 1fr; gap: 20px; }
+                                        @media (max-width: 1000px) { .layout-grid { grid-template-columns: 1fr; } }
+                                
+                                        .panel {
+                                            background: var(--panel-bg);
+                                            border: 1px solid rgba(0, 243, 255, 0.3);
+                                            border-radius: 8px; padding: 20px;
+                                            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+                                            position: relative;
+                                        }
+                                        .panel::before { content: ''; position: absolute; top: -1px; left: -1px; width: 20px; height: 20px; border-top: 2px solid var(--neon-cyan); border-left: 2px solid var(--neon-cyan); }
+                                        .panel::after { content: ''; position: absolute; bottom: -1px; right: -1px; width: 20px; height: 20px; border-bottom: 2px solid var(--neon-cyan); border-right: 2px solid var(--neon-cyan); }
+                                        
+                                        .panel-title {
+                                            font-family: 'Orbitron', sans-serif; font-size: 1em; color: var(--neon-cyan);
+                                            border-bottom: 1px dashed rgba(0, 243, 255, 0.3); padding-bottom: 5px; margin-bottom: 15px;
+                                            display: flex; justify-content: space-between;
+                                        }
+                                
+                                        .data-box {
+                                            display: flex; justify-content: space-between; align-items: center;
+                                            background: rgba(0,0,0,0.5); padding: 10px 15px; border-radius: 5px; margin-bottom: 10px;
+                                            border-left: 4px solid var(--neon-cyan);
+                                        }
+                                        .data-box .label { font-size: 0.85em; color: #bae6fd; }
+                                        .data-box .value { font-family: 'Orbitron', sans-serif; font-size: 1.5em; font-weight: 700; color: #fff; text-shadow: 0 0 8px #fff; }
+                                
+                                        .risk-container { margin-top: 20px; }
+                                        .risk-label { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9em;}
+                                        .risk-bar-bg { width: 100%; height: 20px; background: #1e293b; border-radius: 10px; overflow: hidden; border: 1px solid #334155; }
+                                        .risk-bar-fill { height: 100%; width: 0%; background: var(--neon-green); transition: width 1s ease-in-out; box-shadow: 0 0 10px var(--neon-green); }
+                                
+                                        /* Peta Leaflet dikonfigurasi agar cursor menjadi pointer saat di-hover */
+                                        #map { width: 100%; height: 230px; border-radius: 5px; border: 1px solid rgba(0, 243, 255, 0.3); z-index: 1; filter: invert(90%) hue-rotate(180deg) brightness(80%) contrast(150%); cursor: crosshair;}
+                                
+                                        .chart-container { height: 280px; width: 100%; margin-bottom: 20px;}
+                                        .tabel-wrapper { height: 180px; overflow-y: auto; }
+                                        table { width: 100%; border-collapse: collapse; font-size: 0.85em; }
+                                        th { background: rgba(0, 243, 255, 0.1); color: var(--neon-cyan); padding: 8px; text-align: left; position: sticky; top: 0;}
+                                        td { padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+                                
+                                        .status-hero {
+                                            text-align: center; padding: 15px; border-radius: 5px; margin-bottom: 15px;
+                                            font-family: 'Orbitron', sans-serif; font-size: 1.8em; font-weight: 900; letter-spacing: 3px;
+                                            background: rgba(0,255,102,0.1); border: 1px solid var(--neon-green); color: var(--neon-green);
+                                            text-shadow: 0 0 15px var(--neon-green); transition: all 0.5s;
+                                        }
+                                
+                                        .btn-audio {
+                                            width: 100%; padding: 10px; margin-bottom: 15px;
+                                            background: rgba(0, 243, 255, 0.1); border: 1px solid var(--neon-cyan); color: var(--neon-cyan);
+                                            border-radius: 5px; cursor: pointer; font-family: 'Share Tech Mono', monospace; font-size: 1em;
+                                            transition: 0.3s;
+                                        }
+                                        .btn-audio:hover { background: var(--neon-cyan); color: #000; }
+                                        .btn-audio.active { background: var(--neon-green); color: #000; border-color: var(--neon-green); }
+                                
+                                        .scan-line { position: absolute; width: 100%; height: 2px; background: rgba(0, 243, 255, 0.6); box-shadow: 0 0 10px var(--neon-cyan); top: 0; left: 0; animation: scan 3s infinite linear; z-index: 10; pointer-events: none; }
+                                        @keyframes scan { 0% { top: 0; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+                                    </style>
+                                </head>
+                                <body>
+                                
+                                    <div class="header">
+                                        <div class="judul">
+                                            <h1>GEOSPATIAL EARLY WARNING</h1>
+                                            <p>NODE: ESP32-WOKWI | SATELIT SYNC: AKTIF | <span id="waktuServer">Menghubungkan...</span></p>
+                                        </div>
+                                        <div class="koordinat-box">
+                                            OPR: <span class="op-name">TOHIRLELE</span> (UID: 21)<br>
+                                            LAT: <span id="teksLat" style="color:#fff;">-7.6145</span> | LONG: <span id="teksLng" style="color:#fff;">112.6012</span><br>
+                                            <span style="color: var(--neon-green); font-size: 0.8em;">● METEO-SAT LINKED</span>
+                                        </div>
+                                    </div>
+                                
+                                    <div class="layout-grid">
+                                        <div class="kolom-kiri">
+                                            
+                                            <button class="btn-audio" id="btnSuara" onclick="aktifkanAudio()">🔈 AKTIFKAN SISTEM SUARA (KLIK DISINI)</button>
+                                
+                                            <div class="panel" style="margin-bottom: 20px;">
+                                                <div class="panel-title">STATUS PROTOKOL MITIGASI</div>
+                                                <div class="status-hero" id="boxStatusBesar">SYS. AMAN</div>
+                                                
+                                                <div class="data-box">
+                                                    <div class="label">KEMIRINGAN LERENG</div>
+                                                    <div class="value" id="valKemiringan">0.0°</div>
+                                                </div>
+                                                <div class="data-box">
+                                                    <div class="label">SATURASI AIR TANAH</div>
+                                                    <div class="value" id="valKelembaban">0%</div>
+                                                </div>
+                                                <div class="data-box" style="border-left-color: var(--neon-yellow);">
+                                                    <div class="label" style="color: var(--neon-yellow);">CUACA SATELIT (LIVE)</div>
+                                                    <div class="value" id="valCuaca" style="font-size: 1.2em;">MENYINKRONKAN...</div>
+                                                </div>
+                                
+                                                <div class="risk-container">
+                                                    <div class="risk-label">
+                                                        <span style="color: #94a3b8;">PROBABILITAS LONGSOR (AI RISK)</span>
+                                                        <span id="teksRisiko" style="color: var(--neon-green); font-weight: bold;">0%</span>
+                                                    </div>
+                                                    <div class="risk-bar-bg">
+                                                        <div class="risk-bar-fill" id="barRisiko"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                
+                                            <div class="panel" style="padding: 10px; overflow: hidden;">
+                                                <div class="panel-title" style="padding-left: 10px; font-size: 0.8em;">
+                                                    PEMETAAN SENSOR <span style="color: var(--neon-yellow);">(KLIK PETA UNTUK PINDAH LOKASI)</span>
+                                                </div>
+                                                <div style="position: relative;">
+                                                    <div id="map"></div>
+                                                    <div class="scan-line"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                
+                                        <div class="kolom-kanan">
+                                            <div class="panel" style="margin-bottom: 20px;">
+                                                <div class="panel-title">
+                                                    ANALISIS TREN & FORECASTING
+                                                    <span style="color: var(--neon-yellow); font-size: 0.8em; border: 1px solid var(--neon-yellow); padding: 2px 5px; border-radius: 3px;">AI PREDICT ACTIVE</span>
+                                                </div>
+                                                <div class="chart-container">
+                                                    <canvas id="grafikTren"></canvas>
+                                                </div>
+                                            </div>
+                                
+                                            <div class="panel">
+                                                <div class="panel-title">LOG DATA TRANSMISI (15 ENTRY TERAKHIR)</div>
+                                                <div class="tabel-wrapper">
+                                                    <table>
+                                                        <thead>
+                                                            <tr>
+                                                                <th>TIMESTAMP</th>
+                                                                <th>TILT (°)</th>
+                                                                <th>MOISTURE (%)</th>
+                                                                <th>RISK INDEX</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="tabelData"></tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                
+                                    <script>
+                                        const channelID = "3268553"; 
+                                        const readAPIKey = "ZF37ZW3N1OMKTTGM"; 
+                                
+                                        let map, marker, circleRadius, chartTren;
+                                        let audioAktif = false;
+                                        let alarmSedangBunyi = false;
+                                        const synth = window.speechSynthesis;
+                                
+                                        // Variabel Penyimpan Data Lokasi & Cuaca (Dinamis)
+                                        let sensorLat = -7.6145;
+                                        let sensorLng = 112.6012;
+                                        let statusCuacaTeks = "CERAH";
+                                        let penaltiRisikoCuaca = 0; 
+                                
+                                        function aktifkanAudio() {
+                                            audioAktif = true;
+                                            let btn = document.getElementById("btnSuara");
+                                            btn.innerHTML = "🔊 SISTEM SUARA AKTIF";
+                                            btn.classList.add("active");
+                                            
+                                            let utterThis = new SpeechSynthesisUtterance("Sistem telemetri suara diaktifkan. Otoritas: Tohirlele. Menunggu data sensor dan satelit meteorologi.");
+                                            utterThis.lang = 'id-ID';
+                                            utterThis.rate = 1.1;
+                                            synth.speak(utterThis);
+                                        }
+                                
+                                        function putarAlarmBahaya() {
+                                            if(!audioAktif || alarmSedangBunyi) return;
+                                            alarmSedangBunyi = true;
+                                            let utterThis = new SpeechSynthesisUtterance("Peringatan Darurat. Potensi longsor tingkat tinggi terdeteksi. Segera lakukan prosedur evakuasi sekarang juga.");
+                                            utterThis.lang = 'id-ID';
+                                            utterThis.rate = 1.0;
+                                            utterThis.pitch = 1.2;
+                                            utterThis.onend = function() { alarmSedangBunyi = false; }
+                                            synth.speak(utterThis);
+                                        }
+                                
+                                        // FUNGSI INIT MAP (DIUBAH MENJADI INTERAKTIF)
+                                        function initMap() {
+                                            // Gunakan zoomControl agar user bisa zoom in/out peta
+                                            map = L.map('map', {zoomControl: true, attributionControl: false}).setView([sensorLat, sensorLng], 14); 
+                                            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+                                            
+                                            circleRadius = L.circle([sensorLat, sensorLng], { color: '#00ff66', fillColor: '#00ff66', fillOpacity: 0.2, radius: 400 }).addTo(map);
+                                            marker = L.circleMarker([sensorLat, sensorLng], { radius: 6, fillColor: "#fff", color: "#000", weight: 1, opacity: 1, fillOpacity: 0.8 }).addTo(map);
+                                
+                                            // EVENT LISTENER: Saat Peta Di-klik
+                                            map.on('click', function(e) {
+                                                // Update variabel global koordinat
+                                                sensorLat = e.latlng.lat;
+                                                sensorLng = e.latlng.lng;
+                                
+                                                // Pindahkan Marker dan Radius Circle di Peta
+                                                marker.setLatLng([sensorLat, sensorLng]);
+                                                circleRadius.setLatLng([sensorLat, sensorLng]);
+                                
+                                                // Update teks di Layar HUD (Pojok Kanan Atas)
+                                                document.getElementById('teksLat').innerText = sensorLat.toFixed(4);
+                                                document.getElementById('teksLng').innerText = sensorLng.toFixed(4);
+                                
+                                                // Tampilkan loading sebentar di cuaca
+                                                document.getElementById('valCuaca').innerText = "MENCARI DATA...";
+                                
+                                                // Tembak ulang satelit cuaca untuk lokasi yang baru di-klik
+                                                sinkronisasiCuaca();
+                                            });
+                                        }
+                                
+                                        function initChart() {
+                                            Chart.defaults.color = '#7dd3fc';
+                                            Chart.defaults.font.family = 'Share Tech Mono';
+                                            
+                                            chartTren = new Chart(document.getElementById('grafikTren').getContext('2d'), {
+                                                type: 'line',
+                                                data: { labels: [], datasets: [
+                                                    { label: 'KEMIRINGAN (°)', data: [], borderColor: '#00f3ff', backgroundColor: 'rgba(0, 243, 255, 0.1)', borderWidth: 2, fill: true, tension: 0.3, pointRadius: 0, yAxisID: 'y' },
+                                                    { label: 'KELEMBABAN (%)', data: [], borderColor: '#ffea00', borderDash: [5, 5], borderWidth: 2, fill: false, tension: 0.3, pointRadius: 0, yAxisID: 'y1' }
+                                                ]},
+                                                options: {
+                                                    responsive: true, maintainAspectRatio: false,
+                                                    interaction: { mode: 'index', intersect: false },
+                                                    scales: {
+                                                        x: { grid: { color: 'rgba(0, 243, 255, 0.1)' } },
+                                                        y: { position: 'left', grid: { color: 'rgba(0, 243, 255, 0.1)' } },
+                                                        y1: { position: 'right', grid: { drawOnChartArea: false } }
+                                                    }
+                                                }
+                                            });
+                                        }
+                                
+                                        // FUNGSI TARIK DATA CUACA (DINAMIS SESUAI KOORDINAT)
+                                        async function sinkronisasiCuaca() {
+                                            // URL sekarang menggunakan variabel sensorLat dan sensorLng
+                                            let urlCuaca = `https://api.open-meteo.com/v1/forecast?latitude=${sensorLat}&longitude=${sensorLng}&current=weather_code`;
+                                            
+                                            try {
+                                                let res = await fetch(urlCuaca);
+                                                let data = await res.json();
+                                                let wCode = data.current.weather_code;
+                                
+                                                if(wCode === 0 || wCode === 1) {
+                                                    statusCuacaTeks = "CERAH"; penaltiRisikoCuaca = 0;
+                                                } else if(wCode === 2 || wCode === 3) {
+                                                    statusCuacaTeks = "BERAWAN"; penaltiRisikoCuaca = 5;
+                                                } else if(wCode >= 51 && wCode <= 55) {
+                                                    statusCuacaTeks = "GERIMIS"; penaltiRisikoCuaca = 10;
+                                                } else if(wCode >= 61 && wCode <= 65 || wCode >= 80 && wCode <= 82) {
+                                                    statusCuacaTeks = "HUJAN"; penaltiRisikoCuaca = 20; 
+                                                } else if(wCode >= 95) {
+                                                    statusCuacaTeks = "BADAI PETIR"; penaltiRisikoCuaca = 35; 
+                                                } else {
+                                                    statusCuacaTeks = "MENDUNG"; penaltiRisikoCuaca = 5;
+                                                }
+                                
+                                                document.getElementById('valCuaca').innerText = statusCuacaTeks;
+                                                
+                                                // Minta update dashboard ThingSpeak agar bar risiko otomatis terkalkulasi ulang
+                                                sinkronisasiSatelit();
+                                
+                                            } catch (error) {
+                                                console.error("Gagal sinkronisasi cuaca satelit:", error);
+                                                document.getElementById('valCuaca').innerText = "OFFLINE";
+                                            }
+                                        }
+                                
+                                        async function sinkronisasiSatelit() {
+                                            let url = `https://api.thingspeak.com/channels/${channelID}/feeds.json?api_key=${readAPIKey}&results=15&_t=${new Date().getTime()}`;
+                                
+                                            try {
+                                                let res = await fetch(url, { cache: "no-store" });
+                                                let data = await res.json();
+                                                let feeds = data.feeds;
+                                                if(feeds.length === 0) return;
+                                
+                                                let labels = [], dataMiring = [], dataAir = [];
+                                                let htmlTabel = "";
+                                
+                                                feeds.forEach(feed => {
+                                                    labels.push(new Date(feed.created_at).toLocaleTimeString('id-ID'));
+                                                    dataMiring.push(parseFloat(feed.field1) || 0);
+                                                    dataAir.push(parseFloat(feed.field2) || 0);
+                                                });
+                                
+                                                chartTren.data.labels = labels;
+                                                chartTren.data.datasets[0].data = dataMiring;
+                                                chartTren.data.datasets[1].data = dataAir;
+                                                chartTren.update('none');
+                                
+                                                let terkini = feeds[feeds.length - 1];
+                                                let valMiring = parseFloat(terkini.field1) || 0;
+                                                let valAir = parseInt(terkini.field2) || 0;
+                                                let statusKode = parseInt(terkini.field3) || 0;
+                                
+                                                document.getElementById('valKemiringan').innerText = valMiring.toFixed(1) + "°";
+                                                document.getElementById('valKelembaban').innerText = valAir + "%";
+                                                document.getElementById('waktuServer').innerText = new Date().toLocaleTimeString('id-ID');
+                                
+                                                let batasDinamis = 90 - (valMiring * 1.2);
+                                                if (batasDinamis < 20) batasDinamis = 20;
+                                                
+                                                let risikoDasar = (valAir / batasDinamis) * 100;
+                                                let persentaseRisiko = risikoDasar + penaltiRisikoCuaca; 
+                                                
+                                                if(persentaseRisiko > 100) persentaseRisiko = 100;
+                                                
+                                                document.getElementById('teksRisiko').innerText = persentaseRisiko.toFixed(1) + "%";
+                                                let barRisiko = document.getElementById('barRisiko');
+                                                barRisiko.style.width = persentaseRisiko + "%";
+                                
+                                                [...feeds].reverse().forEach(feed => {
+                                                    let jam = new Date(feed.created_at).toLocaleTimeString('id-ID');
+                                                    let rsk = ((parseFloat(feed.field2) / (90 - (parseFloat(feed.field1)*1.2)))*100) + penaltiRisikoCuaca;
+                                                    let rskStr = rsk > 100 ? 100 : rsk.toFixed(1);
+                                                    htmlTabel += `<tr><td>${jam}</td><td>${parseFloat(feed.field1).toFixed(1)}°</td><td>${parseFloat(feed.field2).toFixed(0)}%</td><td style="color:${rsk>85?'#ff003c':'#00f3ff'}">${rskStr}%</td></tr>`;
+                                                });
+                                                document.getElementById('tabelData').innerHTML = htmlTabel;
+                                
+                                                let boxBesar = document.getElementById('boxStatusBesar');
+                                                let warnaUtama = "";
+                                
+                                                if (statusKode === 2 || persentaseRisiko >= 90) { 
+                                                    warnaUtama = "var(--neon-red)";
+                                                    boxBesar.innerText = "🚨 EVAKUASI DARURAT 🚨";
+                                                    document.body.classList.add('darurat-mode');
+                                                    circleRadius.setStyle({color: '#ff003c', fillColor: '#ff003c'});
+                                                    barRisiko.style.backgroundColor = '#ff003c'; barRisiko.style.boxShadow = '0 0 15px #ff003c';
+                                                    putarAlarmBahaya(); 
+                                                } else if (statusKode === 1 || persentaseRisiko >= 65) {
+                                                    warnaUtama = "var(--neon-yellow)";
+                                                    boxBesar.innerText = "⚠️ SIAGA PROTOKOL ⚠️";
+                                                    document.body.classList.remove('darurat-mode');
+                                                    circleRadius.setStyle({color: '#ffea00', fillColor: '#ffea00'});
+                                                    barRisiko.style.backgroundColor = '#ffea00'; barRisiko.style.boxShadow = '0 0 10px #ffea00';
+                                                } else {
+                                                    warnaUtama = "var(--neon-green)";
+                                                    boxBesar.innerText = "SYS. AMAN TERKENDALI";
+                                                    document.body.classList.remove('darurat-mode');
+                                                    circleRadius.setStyle({color: '#00ff66', fillColor: '#00ff66'});
+                                                    barRisiko.style.backgroundColor = '#00ff66'; barRisiko.style.boxShadow = '0 0 10px #00ff66';
+                                                }
+                                
+                                                boxBesar.style.color = warnaUtama;
+                                                boxBesar.style.borderColor = warnaUtama;
+                                                boxBesar.style.textShadow = `0 0 15px ${warnaUtama}`;
+                                                boxBesar.style.backgroundColor = statusKode === 2 ? "rgba(255,0,60,0.1)" : (statusKode === 1 ? "rgba(255,234,0,0.1)" : "rgba(0,255,102,0.1)");
+                                
+                                            } catch (error) {
+                                                console.error("Gagal sinkronisasi sensor:", error);
+                                            }
+                                        }
+                                
+                                        window.onload = function() {
+                                            initMap();
+                                            initChart();
+                                            
+                                            sinkronisasiCuaca();
+                                            setInterval(sinkronisasiCuaca, 300000); 
+                                            
+                                            sinkronisasiSatelit();
+                                            setInterval(sinkronisasiSatelit, 15000); 
+                                        };
+                                    </script>
+                                </body>
+                                </html>lass="kmap"></div>
                         </div>
                     </div>
                     <!-- TOMBOL BAWAH K-MAP -->
